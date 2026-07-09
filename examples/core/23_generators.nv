@@ -1,0 +1,11 @@
+// Generator functions
+function generator count(start, end) {
+  for let i = start; i <= end; i++ {
+    yield i;
+  }
+}
+
+let gen = count(1, 5);
+Std.println(gen.next());
+Std.println(gen.next());
+Std.println(gen.next());

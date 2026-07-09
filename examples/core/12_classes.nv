@@ -1,0 +1,42 @@
+// Basic class
+class Animal {
+  name: ""
+  sound: ""
+
+  constructor(name, sound) {
+    this.name = name;
+    this.sound = sound;
+  }
+
+  speak() {
+    Std.println(f"{this.name} says {this.sound}");
+  }
+
+  toString() {
+    return f"Animal({this.name})";
+  }
+}
+
+let cat = Animal("Cat", "meow");
+cat.speak();
+Std.println(cat.toString());
+
+// Inheritance
+class Dog extends Animal {
+  breed: ""
+
+  constructor(name, breed) {
+    Super(name, "woof");
+    this.breed = breed;
+  }
+
+  fetch() {
+    Std.println(f"{this.name} the {this.breed} fetches the ball!");
+  }
+}
+
+let dog = Dog("Rex", "Labrador");
+dog.speak();
+dog.fetch();
+Std.println(dog instanceof Dog);
+Std.println(dog instanceof Animal);

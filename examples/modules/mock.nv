@@ -1,0 +1,20 @@
+// mock.nv - mocking case converter
+
+function mock(str) {
+    if str == null { return ""; }
+    let s = Std.string(str);
+    let result = "";
+    let upper = false;
+    for let i = 0; i < s.length; i++ {
+        let c = s[i];
+        if upper {
+            result = result + c.toUpperCase();
+        } else {
+            result = result + c.toLowerCase();
+        }
+        if c != " " { upper = not upper; }
+    }
+    return result;
+}
+
+export { mock: mock }

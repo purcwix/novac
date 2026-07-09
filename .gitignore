@@ -1,0 +1,32 @@
+# Build output dirs
+build/
+build_*/
+out/
+
+# Compiled binaries
+*.exe
+*.dll
+*.dll.a
+*.so
+*.dylib
+*.a
+*.o
+*.obj
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE / OS
+.vscode/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
+
+# REPL history
+.nova.history*

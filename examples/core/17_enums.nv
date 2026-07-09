@@ -1,0 +1,35 @@
+// Enum declaration
+enum Direction {
+  North,
+  South,
+  East,
+  West
+}
+
+enum Color {
+  Red = 0,
+  Green = 1,
+  Blue = 2
+}
+
+// Access variants via :: operator
+let dir = Direction.North;
+Std.println(dir);
+Std.println(dir.variant);
+Std.println(dir.enumType);
+
+// Use in switch
+function describeDirection(d) {
+  switch (d.variant) {
+    case "North": return "Going up"
+    case "South": return "Going down"
+    case "East":  return "Going right"
+    case "West":  return "Going left"
+    default:      return "Unknown"
+  }
+}
+Std.println(describeDirection(Direction.East));
+
+// Enum with values
+let col = Color.Blue;
+Std.println(col.variant, col.value);

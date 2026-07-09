@@ -1,0 +1,19 @@
+// Variables: let, const, var
+let x = 10;
+let name = "Nova";
+const PI = 3.14159;
+var mutable = 42;
+
+Std.println(x);
+Std.println(name);
+Std.println(PI);
+
+mutable = 100;
+Std.println(mutable);
+
+// Destructuring
+let { a, b } = { a: 1, b: 2 };
+Std.println(a, b);
+
+let [first, second] = [10, 20];
+Std.println(first, second);

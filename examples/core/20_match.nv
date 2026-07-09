@@ -1,0 +1,23 @@
+// match statement (structural pattern matching)
+function classify(x) {
+  match x {
+    when 0 { return "zero" }
+    when 1, 2, 3 { return "small" }
+    default { return "other" }
+  }
+}
+Std.println(classify(0));
+Std.println(classify(2));
+Std.println(classify(99));
+
+// match on type
+function describe(val) {
+  match Std.typeOf(val) {
+    when "number" { return f"number: {val}" }
+    when "string" { return f"string: \"{val}\"" }
+    when "boolean" { return f"bool: {val}" }
+    default { return f"other: {typeOf(val)}" }
+  }
+}
+Std.println(describe(42));
+Std.println(describe("hello"));

@@ -1,0 +1,27 @@
+// f-strings with expressions
+let a = 10;
+let b = 20;
+Std.println(f"{a} + {b} = {a + b}");
+Std.println(f"Max is {a > b ? a : b}");
+
+// Nested f-string
+let items = [1, 2, 3];
+Std.println(f"Array length: {items.length}");
+
+// ANSI escape sequences in strings
+Std.println("\redError!\reset");
+Std.println("\color{green}OK\reset");
+Std.println("\bold\underlineTitle\reset");
+Std.println("\color{#00BFFF}Deep Sky Blue\reset");
+Std.println("\bg{blue}Blue Background\reset");
+
+// Argument-form escapes
+Std.println("\cursor{up, 0}");
+Std.println("\repeat{=, 40}");
+Std.println("\pad{left, 20, -}");
+Std.println("\padl{right, 20, -}");
+Std.println("\upper{hello world}");
+Std.println("\lower{HELLO WORLD}");
+// Unicode escapes
+Std.println("\unicode{U+1F600}")   // 😀;
+Std.println("\unicode{U+2665}")    // ♥;

@@ -1,0 +1,62 @@
+// while
+let i = 0;
+while i < 5 {
+  Std.println(i);
+  i++;
+}
+
+// until (runs while condition is FALSE)
+let j = 0;
+until j >= 3 {
+  Std.println("until:", j);
+  j++;
+}
+
+// do-while
+let k = 0;
+do {
+  Std.println("do:", k);
+  k++;
+} while k < 3;
+
+// repeat N times
+repeat 4 {
+  Std.println("repeat!");
+}
+
+// C-style for
+for let n = 0; n < 5; n++ {
+  Std.println("for:", n);
+}
+
+// for-of
+let arr = [10, 20, 30];
+for let v of arr {
+  Std.println("of:", v);
+}
+
+// for-in (keys)
+let obj = { a: 1, b: 2, c: 3 }
+for let k in obj {
+  Std.println("key:", k);
+}
+
+// each (Nova-style for-of with optional index)
+each v, idx of arr {
+  Std.println(f"each[{idx}] = {v}");
+}
+
+// break and continue
+for let n = 0; n < 10; n++ {
+  if n == 3 { continue }
+  if n == 6 { break }
+  Std.println("loop:", n);
+}
+
+// range
+for let n of 0..5 {
+  Std.println("range:", n);
+}
+
+let r = 1..5;
+Std.println(r);

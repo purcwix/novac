@@ -1,0 +1,12 @@
+// RC_REST showcase;
+// captures the rest of the program until RC_* or EOF
+// cleaner than nesting {}s
+function main() RC_REST;
+with Std RC_REST;
+println("Main started");
+let x = 42;
+if x >  50 RC_REST;
+  println("X is more than 50");
+RC_else println("X is less than 50")
+RC_stop RC_stop
+main()

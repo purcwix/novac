@@ -1,0 +1,23 @@
+// Types: number, string, bool, null
+let n = 42;
+let f = 3.14;
+let s = "hello";
+let b = true;
+let nothing = null;
+
+Std.println(Std.typeOf(n));
+Std.println(typeof f); // also works
+Std.println(Std.typeOf(s));
+Std.println(Std.typeOf(b));
+Std.println(Std.typeOf(nothing));
+
+// BigInt
+let big = 9007199254740993n;
+Std.println(big);
+
+// Numeric literals
+let million = 1_000_000;
+let hex     = 0xFF;
+let binary  = 0b1010;
+let octal   = 0r8_17   // base-8 literal: value 15;
+Std.println(million, hex, binary, octal);

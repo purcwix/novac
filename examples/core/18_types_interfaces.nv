@@ -1,0 +1,44 @@
+// Type alias
+type ID = number
+type Name = string
+type Status = "active" | "inactive" | "banned"
+
+// Interface
+interface Printable {
+  toString(): string;
+}
+
+interface Shape {
+  area(): number,
+  perimeter(): number;
+}
+
+// Class implementing interface
+class Circle {
+  radius: 0
+
+  constructor(radius) {
+    this.radius = radius;
+  }
+
+  area() {
+    return Std.Math.PI * this.radius ** 2;
+  }
+
+  perimeter() {
+    return 2 * Std.Math.PI * this.radius;
+  }
+
+  toString() {
+    return f"Circle(r={this.radius})";
+  }
+}
+
+let c = Circle(5);
+Std.println(c.toString());
+Std.println(c.area());
+Std.println(c.perimeter());
+
+// satisfies interface check
+Std.println(Std.Satisfies(c, "Shape"));
+Std.println(Std.Satisfies(c, "Printable"));

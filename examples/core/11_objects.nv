@@ -1,0 +1,46 @@
+// Object literals
+let person = {
+  name: "Alice",
+  age: 30,
+  active: true
+}
+Std.println(person.name);
+Std.println(person["age"]);
+
+// Mutation
+person.email = "alice@example.com";
+person.age = 31;
+Std.println(person);
+
+// Spread
+let extra = { role: "admin", ...person }
+Std.println(extra);
+
+// Destructuring
+let { name, age } = person;
+Std.println(name, age);
+
+// Destructuring with rename
+let { name: personName, age: personAge } = person;
+Std.println(personName, personAge);
+
+// Computed keys
+let field = "score";
+let data = { [field]: 100 }
+Std.println(data.score);
+
+// Methods shorthand
+let calc = {
+  value: 0,
+  add(n) { calc.value += n; return calc },
+  sub(n) { calc.value -= n; return calc },
+  result() { return calc.value }
+}
+calc.add(10).add(5).sub(3);
+Std.println(calc.result());
+
+// keys / values / entries
+let obj = { a: 1, b: 2, c: 3 }
+Std.println(Std.Object.keys(obj));
+Std.println(Std.Object.values(obj));
+Std.println(Std.Object.entries(obj));

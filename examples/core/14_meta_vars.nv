@@ -1,0 +1,23 @@
+// Dynamic / meta variables
+Std.println(__line__);
+Std.println(__file__);
+Std.println(__dirname__);
+Std.println(__date__);
+Std.println(__time__);
+Std.println(__timestamp__);
+Std.println(__platform__);
+Std.println(__version__);
+Std.println(__module__);
+Std.println(__random__);
+Std.println(__uuid__);
+
+// __iter__ inside a loop
+for let i = 0; i < 3; i++ {
+  Std.println(f"iter={__iter__}, i={i}");
+}
+
+// __caller__ inside a function
+function whoCalledMe() {
+  Std.println(f"Called from: {__caller__}");
+}
+whoCalledMe();

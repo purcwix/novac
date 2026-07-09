@@ -1,0 +1,42 @@
+// Preprocessor directives
+
+// $define — macro substitution
+$define MAX_SIZE 100
+$define APP_NAME "MyApp"
+$define DEBUG
+
+Std.println(MAX_SIZE);
+Std.println(APP_NAME);
+
+// $ifdef / $ifndef / $endif — conditional compilation
+$ifdef DEBUG
+Std.println("Debug mode is ON");
+$endif
+
+$ifndef RELEASE
+Std.println("Not a release build");
+$endif
+
+// $undef — remove a macro
+$undef DEBUG
+$ifdef DEBUG
+Std.println("This should NOT Std.println");
+$endif
+Std.println("DEBUG was undefined, continuing normally");
+
+// $register escape — custom escape sequence
+$register escape hr "---------------------------"
+Std.println("Section 1\hr");
+Std.println("Section 2\hr");
+
+// Numeric literal forms
+let big = 1_000_000;
+let billion = 0hbillion;
+let hex = 0xDEAD;
+let bin = 0b11001010;
+Std.println(big, billion, hex, bin);
+
+// k/m/b/t suffixes
+let tenK = 10k;
+let fiveMil = 5m;
+Std.println(tenK, fiveMil);

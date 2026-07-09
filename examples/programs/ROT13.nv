@@ -1,0 +1,26 @@
+// ROT13 in Nova
+
+function rot13(text) {
+    let result = "";
+    let i = 0;
+    while i < text.length {
+        let c = text.charCodeAt(i);
+        if c >= 65 and c <= 90 {
+            // uppercase A-Z
+            result = result + Std.String.fromCharCode(((c - 65 + 13) % 26) + 65);
+        } else if c >= 97 and c <= 122 {
+            // lowercase a-z
+            result = result + Std.String.fromCharCode(((c - 97 + 13) % 26) + 97);
+        } else {
+            // not a letter, keep as is
+            result = result + text[i];
+        }
+        i++;
+    }
+    return result;
+}
+
+let input = Std.input("Enter text: ");
+let encoded = rot13(input);
+Std.println(encoded);
+Std.println(rot13(encoded));

@@ -1,0 +1,64 @@
+// Maze generator in Nova - recursive backtracker
+
+let WIDTH = 21;
+let HEIGHT = 21;
+
+// build grid — all walls
+let grid = [];
+let y = 0;
+while y < HEIGHT {
+    let row = [];
+    let x = 0;
+    while x < WIDTH {
+        row.push(true); // true = wall
+        x++;
+    }
+    grid.push(row);
+    y++;
+}
+
+function inBounds(x, y) {
+    return x > 0 and x < WIDTH - 1 and y > 0 and y < HEIGHT - 1;
+}
+
+function carve(x, y) {
+    grid[y][x] = false; // mark as path
+
+    let dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]];
+    dirs = Std.Random.shuffle(dirs);
+
+    let i = 0;
+    while i < dirs.length {
+        let dx = dirs[i][0];
+        let dy = dirs[i][1];
+        let nx = x + dx;
+        let ny = y + dy;
+
+        if inBounds(nx, ny) and grid[ny][nx] {
+            // carve wall between
+            grid[y + dy / 2][x + dx / 2] = false;
+            carve(nx, ny);
+        }
+        i++;
+    }
+}
+
+// start carving from (1,1)
+carve(1, 1);
+
+// print maze
+let row = 0;
+while row < HEIGHT {
+    let line = "";
+    let col = 0;
+    while col < WIDTH {
+        if grid[row][col] {
+            line = line + "#";
+        } else {
+            line = line + " ";
+        }
+        col++;
+    }
+    Std.println(line);
+    row++;
+}

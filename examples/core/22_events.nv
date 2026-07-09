@@ -1,0 +1,22 @@
+// Events: emit / on
+on "greet" (name) {
+  Std.println(f"Hello, {name}!");
+}
+
+on "add" (data) {
+  Std.println(f"Sum: {data.a + data.b}");
+}
+
+on "error" (msg) {
+  Std.println(f"Error occurred: {msg}");
+}
+
+emit "greet", "Alice";
+emit "greet", "Bob";
+emit "add", { a: 10, b: 32 }
+emit "error", "something went wrong";
+
+// Multiple handlers on same event
+on "tick" (n) { Std.println(f"handler1: {n}") }
+on "tick" (n) { Std.println(f"handler2: {n * 2}") }
+emit "tick", 5;

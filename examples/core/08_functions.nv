@@ -1,0 +1,56 @@
+// Basic function
+function greet(name) {
+  return f"Hello, {name}!";
+}
+Std.println(greet("Nova"));
+
+// Default parameters
+function power(base, exp = 2) {
+  return base ** exp;
+}
+Std.println(power(3));
+Std.println(power(2, 10));
+
+// Rest parameters
+function sum(...nums) {
+  let total = 0;
+  each n of nums { total += n }
+  return total;
+}
+Std.println(sum(1, 2, 3, 4, 5));
+
+// Arrow functions
+let double = x => x * 2;
+let add = (a, b) => a + b;
+Std.println(double(7));
+Std.println(add(3, 4));
+
+// Multi-line arrow
+let clamp = (v, lo, hi) => {
+  if (v < lo) { return lo }
+  if (v > hi) { return hi }
+  return v;
+}
+Std.println(clamp(15, 0, 10));
+
+// give (alias for return)
+function triple(n) {
+  give n * 3;
+}
+Std.println(triple(4));
+
+// First-class functions
+function apply(fn, value) {
+  return fn(value);
+}
+Std.println(apply(double, 5));
+
+// Closures
+function makeCounter() {
+  let count = 0;
+  return () => { count++; return count }
+}
+let counter = makeCounter();
+Std.println(counter());
+Std.println(counter());
+Std.println(counter());

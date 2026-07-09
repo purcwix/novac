@@ -1,0 +1,38 @@
+// Array literals
+let arr = [1, 2, 3, 4, 5];
+Std.println(arr);
+
+// Indexing
+Std.println(arr[0]);
+Std.println(arr[arr.length - 1]);
+
+// Mutation
+arr[2] = 99;
+Std.println(arr);
+arr.push(6);
+Std.println(arr);
+
+// Spread
+let a = [1, 2, 3];
+let b = [0, ...a, 4];
+Std.println(b);
+
+// Array methods
+let nums = [3, 1, 4, 1, 5, 9, 2, 6];
+Std.println(nums.sort((x, y) => x - y));
+Std.println(nums.filter(n => n > 3));
+Std.println(nums.map(n => n * 2));
+Std.println(nums.reduce((acc, n) => acc + n, 0));
+Std.println(nums.find(n => n > 4));
+Std.println(nums.some(n => n > 8));
+Std.println(nums.every(n => n > 0));
+Std.println(nums.includes(5));
+Std.println(nums.indexOf(5));
+Std.println(nums.slice(1, 4));
+
+let nested = [[1, 2], [3, 4], [5, 6]];
+Std.println(nested.flat());
+
+// Destructuring
+let [x, y, ...rest] = [10, 20, 30, 40, 50];
+Std.println(x, y, rest);

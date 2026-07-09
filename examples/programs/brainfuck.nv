@@ -1,0 +1,62 @@
+// brainfuck interpreter in Nova
+
+function runBrainfuck(program) {
+    let tape = [];
+    let ptr = 0;
+    let ip = 0;
+
+    repeat 256 {
+        tape.push(0);
+    }
+
+    while ip < program.length {
+        let char = program[ip];
+
+        switch char {
+            case '>': { ptr++; break; }
+            case '<': { ptr--; break; }
+            case '+': { tape[ptr] = tape[ptr] + 1; break; }
+            case '-': { tape[ptr] = tape[ptr] - 1; break; }
+
+            case '.': {
+                Std.print(Std.String.fromCharCode(tape[ptr]));
+                break;
+            }
+
+            case ',': {
+                let input = Std.input("");
+                tape[ptr] = input.charCodeAt(0);
+                break;
+            }
+
+            case '[': {
+                if tape[ptr] == 0 {
+                    let depth = 1;
+                    while depth > 0 {
+                        ip++;
+                        if program[ip] == '[' { depth++ }
+                        if program[ip] == ']' { depth-- }
+                    }
+                }
+                break;
+            }
+
+            case ']': {
+                if tape[ptr] != 0 {
+                    let depth = 1;
+                    while depth > 0 {
+                        ip--;
+                        if program[ip] == ']' { depth++ }
+                        if program[ip] == '[' { depth-- }
+                    }
+                }
+                break;
+            }
+        }
+
+        ip++;
+    }
+}
+
+let prog = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+runBrainfuck(prog);

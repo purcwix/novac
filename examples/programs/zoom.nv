@@ -1,0 +1,60 @@
+// Mandelbrot ASCII art - animated zoom
+
+let WIDTH = 40;
+let HEIGHT = 20;
+let MAX_ITER = 64;
+let chars = " .:-=+*#%@";
+
+let centerX = -0.743643887037151;
+let centerY = 0.13182590420533;
+let zoom = 1.0;
+let frame = 0;
+
+while true {
+    let frame_str = "\cls\home";
+
+    let scaleX = 3.5 / (WIDTH * zoom);
+    let scaleY = 2.4 / (HEIGHT * zoom);
+
+    let row = 0;
+    while row < HEIGHT {
+        let line = "";
+        let col = 0;
+        while col < WIDTH {
+            let cx = centerX + (col - WIDTH / 2) * scaleX;
+            let cy = centerY + (row - HEIGHT / 2) * scaleY;
+
+            let zx = 0.0;
+            let zy = 0.0;
+            let iter = 0;
+
+            while iter < MAX_ITER {
+                let zx2 = zx * zx;
+                let zy2 = zy * zy;
+                if zx2 + zy2 > 4.0 { break; }
+                let tmp = zx2 - zy2 + cx;
+                zy = 2.0 * zx * zy + cy;
+                zx = tmp;
+                iter++;
+            }
+
+            if iter == MAX_ITER {
+                line = line + " ";
+            } else {
+                let idx = iter % chars.length;
+                line = line + chars[idx];
+            }
+
+            col++;
+        }
+        frame_str = frame_str + line + "\n";
+        row++;
+    }
+
+    frame_str = frame_str + "frame: " + frame + "  zoom: " + zoom + "  center: (" + centerX + ", " + centerY + ")";
+    Std.print(frame_str);
+
+    zoom = zoom * 1.05;
+    frame++;
+    Std.sleep(50);
+}

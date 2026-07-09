@@ -1,0 +1,54 @@
+// Arithmetic
+Std.println(10 + 3);
+Std.println(10 - 3);
+Std.println(10 * 3);
+Std.println(10 / 3);
+Std.println(10 % 3);
+Std.println(2 ** 10);
+
+// Comparison
+Std.println(5 > 3);
+Std.println(5 < 3);
+Std.println(5 >= 5);
+Std.println(5 <= 4);
+Std.println(5 == 5);
+Std.println(5 != 4);
+
+// Logical
+Std.println(true and false);
+Std.println(true or false);
+Std.println(not true);
+
+// Bitwise
+Std.println(0b1010 & 0b1100);
+Std.println(0b1010 | 0b1100);
+Std.println(0b1010 ^ 0b1100);
+Std.println(~0b1010);
+Std.println(1 << 3);
+Std.println(16 >> 2);
+
+// Nullish coalescing
+let val = null;
+Std.println(val ?? "default");
+
+// Nova word operators
+Std.println(2 pow 8);
+Std.println(10 bigger 5);
+Std.println(3 smaller 7);
+Std.println(4 equals 4);
+
+// Increment / decrement
+let i = 5;
+i++;
+Std.println(i);
+i--;
+Std.println(i);
+
+// Compound assignment
+let n = 10;
+n += 5;
+Std.println(n);
+n *= 2;
+Std.println(n);
+n **= 2;
+Std.println(n);

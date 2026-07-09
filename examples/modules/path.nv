@@ -1,0 +1,86 @@
+// path.nv - Path class for Nova
+
+class Path {
+    constructor(str) {
+        this.raw = PathUtils.join(PathUtils.starter + PathUtils.sep, str == null ? "" : str);
+
+        // operator / : Path / "segment" or Path / Path
+        Std.SetOverload(this, "binary", "/", (a, b) => {
+            let bStr = Std.typeof(b) == "object" ? b.raw : Std.string(b);
+            return Path(PathUtils.join(a.raw, bStr));
+        });
+
+        // cast to string
+        Std.SetOverloadRaw(this, "cast:string", (a) => {
+            return a.raw;
+        });
+    }
+
+    toString() {
+        return this.raw;
+    }
+
+    basename() {
+        return PathUtils.basename(this.raw);
+    }
+
+    dirname() {
+        return Path(PathUtils.dirname(this.raw));
+    }
+
+    ext() {
+        return PathUtils.extname(this.raw);
+    }
+
+    stripExt() {
+        let e = PathUtils.extname(this.raw);
+        if e == "" { return Path(this.raw); }
+        return Path(this.raw.slice(0, this.raw.length - e.length));
+    }
+
+    isAbsolute() {
+        return this.raw.startsWith(PathUtils.starter) or this.raw.startsWith("/");
+    }
+
+    parts() {
+        return this.raw.split(PathUtils.sep);
+    }
+
+    exists() {
+        return Std.FS.Exists(this.raw);
+    }
+
+    isFile() {
+        return Std.FS.IsFile(this.raw);
+    }
+
+    isDir() {
+        return Std.FS.IsDirectory(this.raw);
+    }
+
+    join(other) {
+        let otherStr = Std.typeof(other) == "object" ? other.raw : Std.string(other);
+        return Path(PathUtils.join(this.raw, otherStr));
+    }
+
+    withExt(ext) {
+        let stripped = this.stripExt();
+        return Path(stripped.raw + ext);
+    }
+
+    resolve() {
+        return Path(PathUtils.resolve(this.raw));
+    }
+
+    relative(base) {
+        let baseStr = Std.typeof(base) == "object" ? base.raw : Std.string(base);
+        if this.raw.startsWith(baseStr) {
+            let rel = this.raw.slice(baseStr.length);
+            if rel.startsWith(PathUtils.sep) { rel = rel.slice(1); }
+            return Path(rel);
+        }
+        return Path(this.raw);
+    }
+}
+
+export { Path: Path }

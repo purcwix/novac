@@ -1,0 +1,22 @@
+// Map, filter, reduce composition
+let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+let result = nums
+  .filter(n => n % 2 == 0)
+  .map(n => n ** 2)
+  .reduce((acc, n) => acc + n, 0);
+Std.println(result);
+
+// Currying
+function curry(fn) {
+  return (a) => (b) => fn(a, b);
+}
+let curriedAdd = curry((a, b) => a + b);
+let add5 = curriedAdd(5);
+Std.println(add5(3));
+Std.println(add5(10));
+
+// partial application
+let multiply = (a, b) => a * b;
+let triple = partial[multiply](3);
+Std.println(triple(7));

@@ -1,0 +1,42 @@
+// Smart variable modifiers
+
+// frozen: cannot be reassigned
+let x frozen = 42;
+Std.println(x);
+// x = 10  // would throw: Cannot reassign frozen
+
+// tracked: prints on every change
+let score tracked = 0;
+score = 10;
+score = 20;
+score = 30;
+
+// nonull: throws if set to null/undefined
+let name nonull = "Alice";
+Std.println(name);
+// name = null  // would throw
+
+// once: can only be assigned once
+let id once = 1001;
+Std.println(id);
+// id = 1002  // would throw
+
+// lazy: computed on first access
+let heavy lazy = (() => {
+  Std.println("(computing heavy value...)");
+  return 42 * 1000;
+})()
+Std.println("before access");
+Std.println(heavy);
+Std.println(heavy)   // second access: no recompute;
+
+// getter modifier: transform on read
+let celsius = 100;
+let fahrenheit getter (v => v * 9 / 5 + 32) = celsius;
+Std.println(fahrenheit);
+
+// setter modifier: transform on write
+let uppercaseName setter (v => v.toUpperCase()) = "alice";
+Std.println(uppercaseName);
+uppercaseName = "bob";
+Std.println(uppercaseName);

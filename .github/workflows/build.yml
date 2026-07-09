@@ -1,0 +1,107 @@
+name: Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86-64
+            os: ubuntu-latest
+            artifact: novac-linux-x86_64
+
+          - name: Windows x86-64
+            os: windows-latest
+            artifact: novac-windows-x86_64
+
+          - name: macOS x86-64
+            os: macos-13
+            artifact: novac-macos-x86_64
+
+          - name: macOS ARM64
+            os: macos-latest
+            artifact: novac-macos-arm64
+
+          - name: Linux ARM64 (cross)
+            os: ubuntu-latest
+            artifact: novac-linux-arm64
+            cross: true
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Linux native)
+        if: runner.os == 'Linux' && !matrix.cross
+        run: sudo apt-get update && sudo apt-get install -y libffi-dev libssl-dev cmake
+
+      - name: Install deps (Linux ARM64 cross)
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo dpkg --add-architecture arm64 || true
+          sudo apt-get update || true
+          sudo apt-get install -y cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y libffi-dev:arm64 libssl-dev:arm64 || true
+
+      - name: Write ARM64 toolchain file
+        if: matrix.cross
+        run: |
+          mkdir -p .github/toolchains
+          cat > .github/toolchains/linux-arm64.cmake << 'EOF'
+          set(CMAKE_SYSTEM_NAME Linux)
+          set(CMAKE_SYSTEM_PROCESSOR aarch64)
+          set(CMAKE_C_COMPILER   aarch64-linux-gnu-gcc)
+          set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+          EOF
+
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libffi openssl cmake
+
+      - name: Install deps (Windows)
+        if: runner.os == 'Windows'
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+
+      - name: Configure (native)
+        if: '!matrix.cross'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure (cross ARM64)
+        if: matrix.cross
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=.github/toolchains/linux-arm64.cmake
+
+      - name: Build
+        run: cmake --build build --config Release -j4
+
+      - name: Collect binaries (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir dist
+          cp build/novac dist/ 2>/dev/null || cp build/Release/novac dist/ 2>/dev/null || true
+          cp "build/nv+" dist/ 2>/dev/null || cp "build/Release/nv+" dist/ 2>/dev/null || true
+
+      - name: Collect binaries (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          New-Item -ItemType Directory -Force dist
+          Copy-Item build\Release\novac.exe dist\ -ErrorAction SilentlyContinue
+          Copy-Item "build\Release\nv+.exe"  dist\ -ErrorAction SilentlyContinue
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+          if-no-files-found: warn

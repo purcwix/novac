@@ -1,0 +1,27 @@
+// Factorial
+function factorial(n) {
+  if n <= 1 { return 1 }
+  return n * factorial(n - 1);
+}
+Std.println(factorial(10));
+
+// Fibonacci
+function fib(n) {
+  if n <= 1 { return n }
+  return fib(n - 1) + fib(n - 2);
+}
+for let i = 0; i <= 10; i++ {
+  Std.println(f"fib({i}) = {fib(i)}");
+}
+
+// Tower of Hanoi
+function hanoi(n, frm, to, via) {
+  if n == 1 {
+    Std.println(f"Move disk 1 from {frm} to {to}");
+    return;
+  }
+  hanoi(n - 1, frm, via, to);
+  Std.println(f"Move disk {n} from {frm} to {to}");
+  hanoi(n - 1, via, to, frm);
+}
+hanoi(3, "A", "C", "B");

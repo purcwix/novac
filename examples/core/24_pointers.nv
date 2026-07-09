@@ -1,0 +1,20 @@
+// Nova pointer syntax (reference semantics)
+let x = 10;
+let *px = x   // pointer to x;
+
+Std.println(px);     // read through pointer: 10;
+
+// Pointer reassignment
+*px = 99;
+Std.println(x);      // x is now 99 via write-through;
+
+// Pointer in function (pass by reference simulation)
+function increment(ref) {
+  *ref = *ref + 1
+}
+
+let *count = 0;
+increment(count);
+increment(count);
+increment(count);
+Std.println(*count);

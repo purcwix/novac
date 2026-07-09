@@ -1,0 +1,3 @@
+// Hello, World!
+Std.println("Hello, World!");
+Std.println("Nova is running.");

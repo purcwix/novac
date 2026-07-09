@@ -1,0 +1,35 @@
+// Struct declaration
+struct Point {
+  x: number = 0,
+  y: number = 0
+}
+
+struct Person {
+  name: string,
+  age: number,
+  active: bool = true
+}
+
+// Creating struct instances
+let p = Point({ x: 3, y: 4 });
+Std.println(p);
+Std.println(p.x, p.y);
+
+// Field mutation
+p.x = 10;
+Std.println(p);
+
+let alice = Person({ name: "Alice", age: 30 });
+Std.println(alice);
+Std.println(alice.active);
+
+// Struct as function argument
+function distance(a, b) {
+  let dx = b.x - a.x;
+  let dy = b.y - a.y;
+  return Std.Math.sqrt(dx * dx + dy * dy);
+}
+
+let p1 = Point({ x: 0, y: 0 });
+let p2 = Point({ x: 3, y: 4 });
+Std.println(distance(p1, p2));

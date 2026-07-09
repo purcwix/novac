@@ -1,0 +1,343 @@
+from "../modules/path.nv" import Path;
+enum TT {
+  Path,
+  String,
+  Punct=["{", "}", "(", ")", "[", "]", ";", ":", ",", ".", "!", "~", "?", "*", "/", "%", "+", "-", "=", "<", ">", "|", "&", "||", "&&", ";;", ";;;", "|&", "<>", ">>", "<<", "<<<", "<>", ">|", "<&", ">&", "<<-", ">>", "&&-", "||-", "+=", "-=", "*=", "/=", "%=", "=~", "!~", "==", "!=", "<=", ">=", "<", ">"],
+}
+class Token {
+  constructor(typename, value) {
+    this.typename = typename;
+    this.value = value;
+  }
+}
+class Tokenizer {
+  constructor(script) {
+    this.src = script;
+    this.chars = script.split('');
+    this.idx = 0;
+    this.tokens = [];
+  }
+  isPunct(ch) {
+    return TT.Punct.value.includes(ch);
+  }
+  isQuote(ch) {
+    return ch == '"' || ch == "'";
+  }
+  isPath(ch) {
+    return not this.isPunct(ch);
+  }
+  isSpace: Std.CCType.isspace
+  isEOF() {
+    return this.idx >= this.chars.length;
+  }
+  readPath() {
+    let p = "";
+    while not this.isEOF() {
+      const ch = this.chars[this.idx];
+      if this.isPunct(ch) || this.isSpace(ch) || this.isQuote(ch) break;
+      p += ch;
+      this.idx++;
+    }
+    return Token(TT.Path, p);
+  }
+  readString(quote) {
+    let str = "";
+    while not this.isEOF() {
+      let shouldBreak = false;
+      const ch = this.chars[this.idx++];
+      switch ch {
+        case r"\": {
+          const char = this.chars[this.idx++];
+          switch char {
+            case "n": str += "\n"; break
+            case "r": str += "\r"; break
+            case "t": str += "\t"; break
+            case "'": str += "'"; break
+            case '"': str += '"'; break
+            default: str += char; break
+          }
+          break
+        }
+        case quote: shouldBreak = true; break;
+        default: str += ch;
+      }
+      if shouldBreak break
+    }
+    return Token(TT.String, str);
+  }
+  tokenize() {
+    while not this.isEOF() {
+      const ch = this.chars[this.idx];
+      if this.isPunct(ch) {
+        const ch2 = this.chars[this.idx + 1];
+        if this.isPunct(ch + ch2) {
+          this.idx += 2;
+          this.tokens.push(Token(TT.Punct, ch + ch2));
+        } else {
+          this.idx++;
+          this.tokens.push(Token(TT.Punct, ch));
+        }
+      } else if this.isQuote(ch) {
+        this.idx++;
+        this.tokens.push(this.readString(ch));
+      } else if this.isSpace(ch) {
+        this.idx++;
+        continue;
+      } else {
+        this.tokens.push(this.readPath());
+      }
+    }
+  }
+}
+class Executor {
+  constructor(scriptOrTokens, cwd, env) {
+    this.cwd = cwd or ".";
+    this.prevCwd = this.cwd;
+    this.env = env or {};
+    this.status = 0;
+    this.stdout = [];
+    this.stderr = [];
+    this.tokens = [];
+
+    if Std.typeof(scriptOrTokens) == "string" {
+      let t = Tokenizer(scriptOrTokens);
+      t.tokenize();
+      this.tokens = t.tokens;
+    } else {
+      this.tokens = scriptOrTokens or [];
+    }
+  }
+
+  isToken(tok, expected) {
+    return tok != null and tok.typename == expected;
+  }
+
+  tokenValue(tok) {
+    if tok == null { return ""; }
+    if this.isToken(tok, TT.Path) or this.isToken(tok, TT.String) {
+      return this.expand(tok.value);
+    }
+    return tok.value;
+  }
+
+  expand(value) {
+    let out = "";
+    let i = 0;
+    while i < value.length {
+      let ch = value[i];
+      if ch == "$" {
+        let j = i + 1;
+        let name = "";
+        if j < value.length and value[j] == "{" {
+          j = j + 1;
+          while j < value.length and value[j] != "}" {
+            name += value[j];
+            j = j + 1;
+          }
+          if j < value.length { j = j + 1; }
+        } else {
+          while j < value.length and (value[j] >= "A" and value[j] <= "Z" or value[j] >= "a" and value[j] <= "z" or value[j] >= "0" and value[j] <= "9" or value[j] == "_") {
+            name += value[j];
+            j = j + 1;
+          }
+        }
+        if name != "" {
+          out += this.env[name] or "";
+        } else {
+          out += "$";
+        }
+        i = j;
+        continue;
+      }
+      out += ch;
+      i = i + 1;
+    }
+    return out;
+  }
+
+  resolvePath(value) {
+    let p = this.expand(value);
+    if p == "" { return Path(this.cwd); }
+    if p.startsWith("~") {
+      let home = this.env["HOME"] or this.cwd;
+      p = home + p.slice(1);
+    }
+    if p.startsWith("/") { return Path(p); }
+    return Path(this.cwd + "/" + p);
+  }
+
+  pushOut(text) {
+    this.stdout.push(text);
+    return text;
+  }
+
+  collectCommand(start) {
+    let argv = [];
+    let redirects = [];
+    let i = start;
+    while i < this.tokens.length {
+      let tok = this.tokens[i];
+      if tok == null break;
+      if this.isToken(tok, TT.Punct) {
+        let value = tok.value;
+        if value == ";" or value == "&&" or value == "||" or value == "|" or value == "|&" {
+          break;
+        }
+        if value == ">" or value == ">>" or value == "<" or value == "2>" or value == "2>>" {
+          i = i + 1;
+          if i < this.tokens.length {
+            redirects.push({ op: value, target: this.tokenValue(this.tokens[i]) });
+          }
+          i = i + 1;
+          continue;
+        }
+      }
+      argv.push(this.tokenValue(tok));
+      i = i + 1;
+    }
+    return { argv: argv, redirects: redirects, next: i };
+  }
+
+  runSimpleCommand(argv, redirects, input) {
+    if argv.length == 0 {
+      return { status: 0, out: input or "", stop: false };
+    }
+
+    let cmd = argv[0];
+    if cmd == "cd" {
+      let target = "";
+      if argv.length > 1 {
+        target = argv[1];
+      } else {
+        target = this.env["HOME"] or this.cwd;
+      }
+      if target == "-" {
+        target = this.prevCwd or this.cwd;
+      }
+      let resolved = this.resolvePath(target).toString();
+      this.prevCwd = this.cwd;
+      this.cwd = resolved;
+      return { status: 0, out: "", stop: false };
+    }
+
+    if cmd == "pwd" {
+      return { status: 0, out: this.cwd, stop: false };
+    }
+
+    if cmd == "echo" {
+      let suppressNewline = false;
+      let line = "";
+      let i = 1;
+      if argv.length > 1 and argv[1] == "-n" {
+        suppressNewline = true;
+        i = 2;
+      }
+      while i < argv.length {
+        if i > 1 { line += " "; }
+        line += argv[i];
+        i = i + 1;
+      }
+      return { status: 0, out: line, stop: false };
+    }
+
+    if cmd == "export" {
+      if argv.length > 1 {
+        let part = argv[1];
+        let eq = part.indexOf("=");
+        if eq >= 0 {
+          let key = part.slice(0, eq);
+          let value = part.slice(eq + 1);
+          this.env[key] = value;
+        } else {
+          this.env[part] = "";
+        }
+      }
+      return { status: 0, out: "", stop: false };
+    }
+
+    if cmd == "unset" {
+      if argv.length > 1 {
+        delete this.env[argv[1]];
+      }
+      return { status: 0, out: "", stop: false };
+    }
+
+    if cmd == "exit" {
+      this.status = argv.length > 1 ? Std.number(argv[1]) : 0;
+      return { status: this.status, out: "", stop: true };
+    }
+
+    if cmd == "true" {
+      return { status: 0, out: "", stop: false };
+    }
+
+    if cmd == "false" {
+      return { status: 1, out: "", stop: false };
+    }
+
+    if cmd == "cat" {
+      let line = input or "";
+      return { status: 0, out: line, stop: false };
+    }
+
+    this.stderr.push("command not found: " + cmd);
+    return { status: 127, out: "", stop: false };
+  }
+
+  execute() {
+    let i = 0;
+    let input = "";
+    while i < this.tokens.length {
+      let cmdInfo = this.collectCommand(i);
+      let argv = cmdInfo.argv;
+      let redirects = cmdInfo.redirects;
+      let result = this.runSimpleCommand(argv, redirects, input);
+      this.status = result.status;
+      if result.stop {
+        break;
+      }
+
+      if cmdInfo.next < this.tokens.length {
+        let sep = this.tokens[cmdInfo.next];
+        if sep != null and this.isToken(sep, TT.Punct) {
+          if sep.value == "&&" {
+            if this.status != 0 { break; }
+            i = cmdInfo.next + 1;
+            input = "";
+            continue;
+          }
+          if sep.value == "||" {
+            if this.status == 0 { break; }
+            i = cmdInfo.next + 1;
+            input = "";
+            continue;
+          }
+          if sep.value == "|" or sep.value == "|&" {
+            input = result.out;
+            i = cmdInfo.next + 1;
+            continue;
+          }
+        }
+      }
+
+      if result.out != "" {
+        this.pushOut(result.out);
+      }
+      input = "";
+      i = cmdInfo.next;
+      if i < this.tokens.length {
+        let sep = this.tokens[i];
+        if sep != null and this.isToken(sep, TT.Punct) and sep.value == ";" {
+          i = i + 1;
+        }
+      }
+    }
+    return this.status;
+  }
+}
+function runScript(script) {
+  let ex = Executor(script);
+  ex.execute();
+  return ex;
+}
+export { Token, Tokenizer, Executor, runScript };

@@ -1,0 +1,30 @@
+// if / else if / else
+let x = 15;
+
+if x > 20 {
+  Std.println("big");
+} else if x > 10 {
+  Std.println("medium");
+} else {
+  Std.println("small");
+}
+
+// unless (runs if condition is FALSE)
+unless x == 0 {
+  Std.println("x is not zero");
+}
+
+// ternary
+let label = x > 10 ? "over ten" : "ten or less";
+Std.println(label);
+
+// inline if (postfix)
+Std.println("positive") if x > 0;
+
+// switch
+let day = "Mon";
+switch day {
+  case "Mon": Std.println("Monday"); break
+  case "Fri": Std.println("Friday"); break
+  default:    Std.println("Other day")
+}

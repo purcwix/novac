@@ -1,0 +1,52 @@
+// slugify.nv - turn any string into a URL-friendly slug
+
+function slugify(str, opts) {
+    if str == null { return ""; }
+
+    let sep = (opts != null and opts.separator != null) ? opts.separator : "-";
+    let lower = (opts != null and opts.lowercase != null) ? opts.lowercase : true;
+
+    let s = Std.string(str);
+
+    if lower { s = s.toLowerCase(); }
+
+    let accents = [
+        ["á","a"],["à","a"],["ä","a"],["â","a"],["ã","a"],
+        ["é","e"],["è","e"],["ë","e"],["ê","e"],
+        ["í","i"],["ì","i"],["ï","i"],["î","i"],
+        ["ó","o"],["ò","o"],["ö","o"],["ô","o"],["õ","o"],
+        ["ú","u"],["ù","u"],["ü","u"],["û","u"],
+        ["ý","y"],["ÿ","y"],
+        ["ñ","n"],["ç","c"],["ß","ss"]
+    ];
+
+    for let pair of accents {
+        s = s.replaceAll(pair[0], pair[1]);
+    }
+
+    // replace any char that's not a-z or 0-9 with separator
+    let result = "";
+    let inSep = false;
+    for let i = 0; i < s.length; i++ {
+        let c = s[i];
+        let code = c.charCodeAt(0);
+        let isAlnum = (code >= 97 and code <= 122) or (code >= 48 and code <= 57);
+        if isAlnum {
+            result = result + c;
+            inSep = false;
+        } else {
+            if not inSep {
+                result = result + sep;
+                inSep = true;
+            }
+        }
+    }
+
+    // trim leading/trailing separators
+    while result.startsWith(sep) { result = result.slice(sep.length); }
+    while result.endsWith(sep)   { result = result.slice(0, result.length - sep.length); }
+
+    return result;
+}
+
+export { slugify: slugify }

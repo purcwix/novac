@@ -1,0 +1,13 @@
+// Namespace declaration
+namespace Math2 {
+  const TAU = 6.283185307;
+  const PHI = 1.618033988;
+
+  function map(v, inLo, inHi, outLo, outHi) {
+    return outLo + (v - inLo) / (inHi - inLo) * (outHi - outLo);
+  }
+}
+
+Std.println(Math2.TAU);
+Std.println(Math2.PHI);
+Std.println(Math2.map(5, 0, 10, 0, 100));

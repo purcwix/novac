@@ -1,0 +1,650 @@
+// ════════════════════════════════════════════════════════════════════════
+//  basic.nv — A small BASIC interpreter written in Nova
+//
+//  Supports:
+//    REM, LET (optional), PRINT, INPUT, IF...THEN, GOTO, GOSUB, RETURN,
+//    FOR...TO...STEP, NEXT, END/STOP, DIM (1D arrays via A(i))
+//    Expressions: + - * / ^ MOD, comparisons, AND/OR/NOT, parens,
+//    built-ins: ABS INT SQR RND LEN STR$ VAL CHR$ ASC SGN
+//
+//  Run with:  novac basic.nv
+//
+//  NOTE: every simple statement below ends with ';'. This is required —
+//  without it, a line like `let x = 12` directly followed by `if ...`
+//  gets parsed as a single expression-statement: the `if` is consumed as
+//  an inline IfTernary modifier on the declaration's value, not as a new
+//  statement. The semicolon closes the statement and prevents that.
+// ════════════════════════════════════════════════════════════════════════
+
+function isDigitChar(c) {
+    return c >= "0" && c <= "9";
+}
+
+function isAlphaChar(c) {
+    return (c >= "A" && c <= "Z") || (c >= "a" && c <= "z") || c == "_";
+}
+
+function isIdentChar(c) {
+    return isAlphaChar(c) || isDigitChar(c) || c == "$";
+}
+
+// ── Expression tokenizer ──────────────────────────────────────────────────
+
+function tokenizeExpr(src) {
+    let tokens = [];
+    let i = 0;
+    let n = src.length;
+    while i < n {
+        let c = src.charAt(i);
+        if c == " " {
+            i = i + 1;
+            continue;
+        }
+        if c == "\"" {
+            let j = i + 1;
+            let buf = "";
+            while j < n && src.charAt(j) != "\"" {
+                buf = buf + src.charAt(j);
+                j = j + 1;
+            }
+            tokens.push({ kind: "str", value: buf });
+            i = j + 1;
+            continue;
+        }
+        if isDigitChar(c) {
+            let buf = "";
+            while i < n && (isDigitChar(src.charAt(i)) || src.charAt(i) == ".") {
+                buf = buf + src.charAt(i);
+                i = i + 1;
+            }
+            tokens.push({ kind: "num", value: Std.number(buf) });
+            continue;
+        }
+        if isAlphaChar(c) {
+            let buf = "";
+            while i < n && isIdentChar(src.charAt(i)) {
+                buf = buf + src.charAt(i);
+                i = i + 1;
+            }
+            tokens.push({ kind: "ident", value: buf.toUpperCase() });
+            continue;
+        }
+        if c == "<" || c == ">" {
+            let two = src.slice(i, i + 2);
+            if two == "<=" || two == ">=" || two == "<>" {
+                tokens.push({ kind: "op", value: two });
+                i = i + 2;
+            } else {
+                tokens.push({ kind: "op", value: c });
+                i = i + 1;
+            }
+            continue;
+        }
+        if c == "(" || c == ")" || c == "," {
+            tokens.push({ kind: c == "(" ? "lparen" : (c == ")" ? "rparen" : "comma"), value: c });
+            i = i + 1;
+            continue;
+        }
+        if c == "+" || c == "-" || c == "*" || c == "/" || c == "=" || c == "^" {
+            tokens.push({ kind: "op", value: c });
+            i = i + 1;
+            continue;
+        }
+        // unknown char — skip it
+        i = i + 1;
+    }
+    return tokens;
+}
+
+// ── Recursive-descent expression evaluator ─────────────────────────────────
+
+class ExprEval {
+    setup(interp, tokens) {
+        this.interp = interp;
+        this.tokens = tokens;
+        this.pos = 0;
+    }
+
+    peek() {
+        if this.pos < this.tokens.length { return this.tokens[this.pos]; }
+        return null;
+    }
+
+    advance() {
+        let t = this.peek();
+        this.pos = this.pos + 1;
+        return t;
+    }
+
+    evaluate() {
+        return this.parseOr();
+    }
+
+    parseOr() {
+        let left = this.parseAnd();
+        while true {
+            let t = this.peek();
+            if t != null && t.kind == "ident" && t.value == "OR" {
+                this.advance();
+                let right = this.parseAnd();
+                left = (this.truthy(left) || this.truthy(right)) ? 1 : 0;
+            } else { break; }
+        }
+        return left;
+    }
+
+    parseAnd() {
+        let left = this.parseNot();
+        while true {
+            let t = this.peek();
+            if t != null && t.kind == "ident" && t.value == "AND" {
+                this.advance();
+                let right = this.parseNot();
+                left = (this.truthy(left) && this.truthy(right)) ? 1 : 0;
+            } else { break; }
+        }
+        return left;
+    }
+
+    parseNot() {
+        let t = this.peek();
+        if t != null && t.kind == "ident" && t.value == "NOT" {
+            this.advance();
+            let v = this.parseNot();
+            return this.truthy(v) ? 0 : 1;
+        }
+        return this.parseCompare();
+    }
+
+    truthy(v) {
+        if Std.typeof(v) == "number" { return v != 0; }
+        if Std.typeof(v) == "string" { return v.length > 0; }
+        return v ? true : false;
+    }
+
+    parseCompare() {
+        let left = this.parseAddSub();
+        let t = this.peek();
+        if t != null && t.kind == "op" &&
+           (t.value == "=" || t.value == "<>" || t.value == "<" ||
+            t.value == ">" || t.value == "<=" || t.value == ">=") {
+            this.advance();
+            let right = this.parseAddSub();
+            if t.value == "=" { return left == right ? 1 : 0; }
+            if t.value == "<>" { return left != right ? 1 : 0; }
+            if t.value == "<" { return left < right ? 1 : 0; }
+            if t.value == ">" { return left > right ? 1 : 0; }
+            if t.value == "<=" { return left <= right ? 1 : 0; }
+            if t.value == ">=" { return left >= right ? 1 : 0; }
+        }
+        return left;
+    }
+
+    parseAddSub() {
+        let left = this.parseMulDiv();
+        while true {
+            let t = this.peek();
+            if t != null && t.kind == "op" && (t.value == "+" || t.value == "-") {
+                this.advance();
+                let right = this.parseMulDiv();
+                if t.value == "+" {
+                    left = (Std.typeof(left) == "string" || Std.typeof(right) == "string")
+                        ? Std.string(left) + Std.string(right)
+                        : left + right;
+                } else {
+                    left = left - right;
+                }
+            } else { break; }
+        }
+        return left;
+    }
+
+    parseMulDiv() {
+        let left = this.parseUnary();
+        while true {
+            let t = this.peek();
+            if t != null && t.kind == "op" && (t.value == "*" || t.value == "/") {
+                this.advance();
+                let right = this.parseUnary();
+                left = t.value == "*" ? left * right : left / right;
+            } else if t != null && t.kind == "ident" && t.value == "MOD" {
+                this.advance();
+                let right = this.parseUnary();
+                left = left % right;
+            } else { break; }
+        }
+        return left;
+    }
+
+    parseUnary() {
+        let t = this.peek();
+        if t != null && t.kind == "op" && t.value == "-" {
+            this.advance();
+            return 0 - this.parseUnary();
+        }
+        if t != null && t.kind == "op" && t.value == "+" {
+            this.advance();
+            return this.parseUnary();
+        }
+        return this.parsePow();
+    }
+
+    parsePow() {
+        let base = this.parseAtom();
+        let t = this.peek();
+        if t != null && t.kind == "op" && t.value == "^" {
+            this.advance();
+            let exp = this.parseUnary();
+            return Std.Math.pow(base, exp);
+        }
+        return base;
+    }
+
+    parseArgs() {
+        let args = [];
+        if this.peek() != null && this.peek().kind != "rparen" {
+            args.push(this.evaluate());
+            while this.peek() != null && this.peek().kind == "comma" {
+                this.advance();
+                args.push(this.evaluate());
+            }
+        }
+        if this.peek() != null && this.peek().kind == "rparen" { this.advance(); }
+        return args;
+    }
+
+    callBuiltin(name, args) {
+        if name == "ABS" { return Std.Math.abs(args[0]); }
+        if name == "INT" { return Std.Math.floor(args[0]); }
+        if name == "SQR" { return Std.Math.sqrt(args[0]); }
+        if name == "SGN" { return Std.Math.sign(args[0]); }
+        if name == "RND" { return Std.Math.random(); }
+        if name == "LEN" { return Std.string(args[0]).length; }
+        if name == "STR$" || name == "STR" { return Std.string(args[0]); }
+        if name == "VAL" { return Std.number(args[0]); }
+        if name == "CHR$" || name == "CHR" { return Std.String.fromCharCode(args[0]); }
+        if name == "ASC" { return Std.string(args[0]).charCodeAt(0); }
+        Std.println("?UNKNOWN FUNCTION " + name);
+        return 0;
+    }
+
+    parseAtom() {
+        let t = this.advance();
+        if t == null { return 0; }
+        if t.kind == "num" { return t.value; }
+        if t.kind == "str" { return t.value; }
+        if t.kind == "lparen" {
+            let v = this.evaluate();
+            if this.peek() != null && this.peek().kind == "rparen" { this.advance(); }
+            return v;
+        }
+        if t.kind == "ident" {
+            let name = t.value;
+            if this.peek() != null && this.peek().kind == "lparen" {
+                this.advance();
+                let args = this.parseArgs();
+                if this.interp.isArrayVar(name) {
+                    return this.interp.getArrayElem(name, args[0]);
+                }
+                return this.callBuiltin(name, args);
+            }
+            return this.interp.getVar(name);
+        }
+        return 0;
+    }
+}
+
+function evalExpr(interp, exprStr) {
+    let tokens = tokenizeExpr(exprStr);
+    let e = ExprEval();
+    e.setup(interp, tokens);
+    return e.evaluate();
+}
+
+// ── The interpreter ─────────────────────────────────────────────────────
+
+class Basic {
+    constructor() {
+        this.lineNums = [];
+        this.lineSrc = [];
+        this.lineIndex = {};
+        this.vars = {};
+        this.arrays = {};
+        this.forStack = [];
+        this.gosubStack = [];
+        this.running = true;
+        this.pc = 0;
+    }
+
+    splitCommand(stmt) {
+        let i = 0;
+        let n = stmt.length;
+        while i < n && stmt.charAt(i) != " " { i = i + 1; }
+        return { cmd: stmt.slice(0, i), rest: stmt.slice(i).trim() };
+    }
+
+    load(source) {
+        let rawLines = source.split("\n");
+        each raw of rawLines {
+            let trimmed = raw.trim();
+            if trimmed.length == 0 { continue; }
+            let i = 0;
+            let n = trimmed.length;
+            while i < n && trimmed.charAt(i) != " " { i = i + 1; }
+            let numStr = trimmed.slice(0, i);
+            let lineNum = Std.number(numStr);
+            let rest = trimmed.slice(i).trim();
+            this.lineNums.push(lineNum);
+            this.lineSrc.push(rest);
+        }
+
+        // insertion sort, keeping src array aligned with line numbers
+        let n = this.lineNums.length;
+        for let a = 1; a < n; a = a + 1 {
+            let keyNum = this.lineNums[a];
+            let keySrc = this.lineSrc[a];
+            let b = a - 1;
+            while b >= 0 && this.lineNums[b] > keyNum {
+                this.lineNums[b + 1] = this.lineNums[b];
+                this.lineSrc[b + 1] = this.lineSrc[b];
+                b = b - 1;
+            }
+            this.lineNums[b + 1] = keyNum;
+            this.lineSrc[b + 1] = keySrc;
+        }
+
+        each num, idx of this.lineNums {
+            this.lineIndex[Std.string(num)] = idx;
+        }
+    }
+
+    findLine(num) {
+        let key = Std.string(num);
+        if Std.isDefined(this.lineIndex[key]) { return this.lineIndex[key]; }
+        return -1;
+    }
+
+    getVar(name) {
+        if Std.isDefined(this.vars[name]) { return this.vars[name]; }
+        // BASIC convention: string-named vars default to "", numeric to 0
+        if name.endsWith("$") { return ""; }
+        return 0;
+    }
+
+    setVar(name, value) {
+        this.vars[name] = value;
+    }
+
+    isArrayVar(name) {
+        return Std.isDefined(this.arrays[name]);
+    }
+
+    dimArray(name, size) {
+        let arr = [];
+        for let i = 0; i <= size; i = i + 1 { arr.push(0); }
+        this.arrays[name] = arr;
+    }
+
+    getArrayElem(name, idx) {
+        if !this.isArrayVar(name) { this.dimArray(name, 10); }
+        let arr = this.arrays[name];
+        let i = Std.Math.floor(idx);
+        if i < 0 || i >= arr.length { return 0; }
+        return arr[i];
+    }
+
+    setArrayElem(name, idx, value) {
+        if !this.isArrayVar(name) { this.dimArray(name, 10); }
+        let arr = this.arrays[name];
+        let i = Std.Math.floor(idx);
+        if i >= 0 && i < arr.length { arr[i] = value; }
+    }
+
+    run() {
+        this.pc = 0;
+        this.running = true;
+        while this.running && this.pc < this.lineNums.length {
+            let stmt = this.lineSrc[this.pc];
+            let nextPc = this.pc + 1;
+            let jump = this.exec(stmt);
+            if jump != null {
+                if jump == "END" {
+                    this.running = false;
+                } else {
+                    let target = this.findLine(jump);
+                    if target == -1 {
+                        Std.println("?UNDEFINED LINE " + Std.string(jump));
+                        this.running = false;
+                    } else {
+                        nextPc = target;
+                    }
+                }
+            }
+            this.pc = nextPc;
+        }
+    }
+
+    exec(stmt) {
+        if stmt.length == 0 { return null; }
+        let parts = this.splitCommand(stmt);
+        let cmd = parts.cmd.toUpperCase();
+        let rest = parts.rest;
+
+        if cmd == "REM" { return null; }
+        if cmd == "LET" { this.doAssign(rest); return null; }
+        if cmd == "PRINT" || cmd == "?" { this.doPrint(rest); return null; }
+        if cmd == "INPUT" { this.doInput(rest); return null; }
+        if cmd == "IF" { return this.doIf(rest); }
+        if cmd == "GOTO" { return Std.number(rest.trim()); }
+        if cmd == "GOSUB" {
+            this.gosubStack.push(this.pc + 1);
+            return Std.number(rest.trim());
+        }
+        if cmd == "RETURN" {
+        if this.gosubStack.length == 0 {
+            Std.println("?RETURN WITHOUT GOSUB");
+            return "END";
+        }
+        let retIdx = this.gosubStack.pop();
+        return Std.number(this.findLineNumberAt(retIdx));
+        }
+        if cmd == "FOR" { this.doFor(rest); return null; }
+        if cmd == "NEXT" { return this.doNext(rest); }
+        if cmd == "END" || cmd == "STOP" { return "END"; }
+        if cmd == "DIM" { this.doDim(rest); return null; }
+
+        // bare assignment without LET, e.g.  X = X + 1
+        if stmt.includes("=") {
+            this.doAssign(stmt);
+            return null;
+        }
+
+        Std.println("?SYNTAX ERROR: " + stmt);
+        return null;
+    }
+
+    doDim(rest) {
+        // DIM A(10)
+        let open = rest.indexOf("(");
+        if open == -1 { return; }
+        let name = rest.slice(0, open).trim().toUpperCase();
+        let close = rest.indexOf(")");
+        let sizeExpr = rest.slice(open + 1, close);
+        let size = Std.Math.floor(evalExpr(this, sizeExpr));
+        this.dimArray(name, size);
+    }
+
+    // Splits "TARGET = EXPR" honoring that TARGET may be NAME or NAME(idx)
+    doAssign(rest) {
+        let eq = rest.indexOf("=");
+        if eq == -1 { return; }
+        let target = rest.slice(0, eq).trim();
+        let exprStr = rest.slice(eq + 1).trim();
+        let value = evalExpr(this, exprStr);
+
+        let open = target.indexOf("(");
+        if open != -1 {
+            let name = target.slice(0, open).trim().toUpperCase();
+            let close = target.indexOf(")");
+            let idxExpr = target.slice(open + 1, close);
+            let idx = evalExpr(this, idxExpr);
+            this.setArrayElem(name, idx, value);
+        } else {
+            this.setVar(target.toUpperCase(), value);
+        }
+    }
+
+    // PRINT splits on top-level commas/semicolons (not inside strings or parens)
+    splitPrintParts(rest) {
+        let parts = [];
+        let buf = "";
+        let depth = 0;
+        let inStr = false;
+        let i = 0;
+        let n = rest.length;
+        while i < n {
+            let c = rest.charAt(i);
+            if c == "\"" { inStr = !inStr; }
+            if !inStr {
+                if c == "(" { depth = depth + 1; }
+                if c == ")" { depth = depth - 1; }
+                if (c == "," || c == ";") && depth == 0 {
+                    parts.push(buf);
+                    buf = "";
+                    i = i + 1;
+                    continue;
+                }
+            }
+            buf = buf + c;
+            i = i + 1;
+        }
+        if buf.trim().length > 0 { parts.push(buf); }
+        return parts;
+    }
+
+    doPrint(rest) {
+        if rest.trim().length == 0 {
+            Std.println("");
+            return;
+        }
+        let parts = this.splitPrintParts(rest);
+        let out = "";
+        each p of parts {
+            let trimmed = p.trim();
+            if trimmed.length == 0 { continue; }
+            out = out + Std.string(evalExpr(this, trimmed)) + " ";
+        }
+        Std.println(out.trim());
+    }
+
+    doInput(rest) {
+        // INPUT "Prompt"; VAR   or   INPUT VAR
+        let prompt = "";
+        let varName = rest;
+        if rest.includes(";") {
+            let parts = rest.split(";");
+            prompt = parts[0].trim();
+            if prompt.charAt(0) == "\"" { prompt = prompt.slice(1, prompt.length - 1); }
+            varName = parts[1].trim();
+        }
+        let raw = Std.input(prompt + "? ");
+        varName = varName.toUpperCase();
+        if varName.endsWith("$") {
+            this.setVar(varName, raw);
+        } else {
+            this.setVar(varName, Std.number(raw));
+        }
+    }
+
+    // IF expr THEN target      — target is a line number or another statement
+    doIf(rest) {
+        let thenIdx = rest.toUpperCase().indexOf("THEN");
+        if thenIdx == -1 {
+            Std.println("?MISSING THEN: " + rest);
+            return null;
+        }
+        let condStr = rest.slice(0, thenIdx).trim();
+        let thenPart = rest.slice(thenIdx + 4).trim();
+        let cond = evalExpr(this, condStr);
+        if !this.truthyVal(cond) { return null; }
+
+        // numeric target → GOTO; otherwise treat as inline statement
+        let allDigits = true;
+        let i = 0;
+        while i < thenPart.length {
+            let c = thenPart.charAt(i);
+            if !isDigitChar(c) { allDigits = false; }
+            i = i + 1;
+        }
+        if allDigits && thenPart.length > 0 {
+            return Std.number(thenPart);
+        }
+        return this.exec(thenPart);
+    }
+
+    truthyVal(v) {
+        if Std.typeof(v) == "number" { return v != 0; }
+        if Std.typeof(v) == "string" { return v.length > 0; }
+        return v ? true : false;
+    }
+
+    doFor(rest) {
+        // FOR I = 1 TO 10 [STEP 2]
+        let eq = rest.indexOf("=");
+        let varName = rest.slice(0, eq).trim().toUpperCase();
+        let afterEq = rest.slice(eq + 1);
+        let upperAfter = afterEq.toUpperCase();
+        let toIdx = upperAfter.indexOf("TO");
+        let startStr = afterEq.slice(0, toIdx).trim();
+        let remainder = afterEq.slice(toIdx + 2);
+        let upperRemainder = remainder.toUpperCase();
+        let stepIdx = upperRemainder.indexOf("STEP");
+        let endStr = stepIdx == -1 ? remainder.trim() : remainder.slice(0, stepIdx).trim();
+        let stepStr = stepIdx == -1 ? "1" : remainder.slice(stepIdx + 4).trim();
+
+        let startVal = evalExpr(this, startStr);
+        let endVal = evalExpr(this, endStr);
+        let stepVal = evalExpr(this, stepStr);
+
+        this.setVar(varName, startVal);
+        this.forStack.push({
+            varName: varName,
+            endVal: endVal,
+            stepVal: stepVal,
+            bodyPc: this.pc + 1
+        });
+    }
+
+    doNext(rest) {
+        if this.forStack.length == 0 {
+            Std.println("?NEXT WITHOUT FOR");
+            return "END";
+        }
+        let frame = this.forStack[this.forStack.length - 1];
+        let cur = this.getVar(frame.varName) + frame.stepVal;
+        this.setVar(frame.varName, cur);
+
+        let done = frame.stepVal >= 0 ? cur > frame.endVal : cur < frame.endVal;
+        if done {
+            this.forStack.pop();
+            return null;
+        }
+        return Std.number(this.findLineNumberAt(frame.bodyPc));
+    }
+
+    findLineNumberAt(idx) {
+        if idx >= 0 && idx < this.lineNums.length { return this.lineNums[idx]; }
+        return -1;
+    }
+}
+
+
+function runCode(code) {
+    const BasicRunner = Basic();
+    BasicRunner.load(code);
+    BasicRunner.run();
+}
+InputMgr.repl({
+    prompt: "\greenEnter BASIC code: \reset",
+    eval: runCode
+});

@@ -1,0 +1,88 @@
+// Ping Pong actor model via Std.WorkerThread
+
+let pingSrc = "
+let running = true;
+let count = 0;
+while running {
+    let msgs = receive();
+    let i = 0;
+    while i < msgs.length {
+        let msg = msgs[i];
+        if msg == 'stop' {
+            running = false;
+        } else {
+            Std.println('Ping got: ' + msg + ' (round ' + count + ')');
+            count = count + 1;
+            postMessage('ping');
+        }
+        i++;
+    }
+    Std.sleep(10);
+}
+";
+
+let pongSrc = "
+let running = true;
+let count = 0;
+while running {
+    let msgs = receive();
+    let i = 0;
+    while i < msgs.length {
+        let msg = msgs[i];
+        if msg == 'stop' {
+            running = false;
+        } else {
+            Std.println('Pong got: ' + msg + ' (round ' + count + ')');
+            count = count + 1;
+            postMessage('pong');
+        }
+        i++;
+    }
+    Std.sleep(10);
+}
+";
+
+let pingActor = Std.WorkerThread(pingSrc);
+let pongActor = Std.WorkerThread(pongSrc);
+
+// kickoff
+pingActor.postMessage("start");
+
+let rounds = 0;
+let maxRounds = 5;
+
+while rounds < maxRounds {
+    // route ping's output to pong
+    let pingMsgs = pingActor.receive();
+    let i = 0;
+    while i < pingMsgs.length {
+        if pingMsgs[i] == "ping" {
+            pongActor.postMessage("pong");
+            rounds = rounds + 1;
+        }
+        i++;
+    }
+
+    // route pong's output to ping
+    let pongMsgs = pongActor.receive();
+    let j = 0;
+    while j < pongMsgs.length {
+        if pongMsgs[j] == "pong" {
+            if rounds < maxRounds {
+                pingActor.postMessage("ping");
+            }
+        }
+        j++;
+    }
+
+    Std.sleep(50);
+}
+
+// stop both
+pingActor.postMessage("stop");
+pongActor.postMessage("stop");
+
+pingActor.join();
+pongActor.join();
+
+Std.println("Done! " + maxRounds + " rounds completed.");

@@ -1,0 +1,22 @@
+// Strings: f-strings, escapes, raw strings
+let name = "World";
+let greeting = f"Hello, {name}!";
+Std.println(greeting);
+
+// Escape sequences
+
+Std.println("Tab:\there");
+Std.println("Newline done");
+Std.println("\redtext\reset normal");
+Std.println("\boldbold text\resetbold normal");
+
+// Raw string (no escape processing)
+let raw = r"C:\Users\nova\file.txt";
+Std.println(raw);
+
+// String ops via builtins
+let str = "hello nova";
+Std.println(str.length);
+Std.println(str.toUpperCase());
+Std.println(str.includes("nova"));
+Std.println(str.split(" "));

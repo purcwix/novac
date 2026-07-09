@@ -1,0 +1,88 @@
+
+// Novac FFI Tester — a small Windows GUI app for testing dynamic library calls.
+//
+// Enter a library name, function name, return type, a comma-separated list of
+// C arg types, and a Nova array expression for the arguments. It resolves and
+// calls the function via Std.Dlopen / .sym / Std.Ccall and shows the result.
+
+let win = Std.Windows.GUI.CreateWindow("Novac FFI Tester", 520, 460, { resizable: false });
+
+// ── labels + inputs ──────────────────────────────────────────────────────────
+
+Std.Windows.GUI.CreateLabel(win, "Library (e.g. user32.dll):", 10, 10, 480, 20);
+let libEdit = Std.Windows.GUI.CreateEdit(win, "user32.dll", 10, 32, 480, 24);
+
+Std.Windows.GUI.CreateLabel(win, "Function name (e.g. MessageBoxA):", 10, 66, 480, 20);
+let fnEdit = Std.Windows.GUI.CreateEdit(win, "MessageBoxA", 10, 88, 480, 24);
+
+Std.Windows.GUI.CreateLabel(win, "Return type (e.g. i32, f64, cstr, ptr, void):", 10, 122, 480, 20);
+let retEdit = Std.Windows.GUI.CreateEdit(win, "i32", 10, 144, 480, 24);
+
+Std.Windows.GUI.CreateLabel(win, "Arg types, comma-separated (e.g. ptr,cstr,cstr,u32):", 10, 178, 480, 20);
+let typesEdit = Std.Windows.GUI.CreateEdit(win, "ptr,cstr,cstr,u32", 10, 200, 480, 24);
+
+Std.Windows.GUI.CreateLabel(win, "Args, as a Nova array expression:", 10, 234, 480, 20);
+let argsEdit = Std.Windows.GUI.CreateEdit(win, "[null, \"Hello from Novac!\", \"FFI Tester\", 0]", 10, 256, 480, 24);
+
+let callBtn = Std.Windows.GUI.CreateButton(win, "Call", 10, 292, 100, 32);
+
+Std.Windows.GUI.CreateLabel(win, "Result:", 10, 332, 480, 20);
+let resultEdit = Std.Windows.GUI.CreateEdit(win, "", 10, 354, 480, 80, { multiline: true, readonly: true });
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+let parseTypes = (s) => {
+    let parts = s.split(",");
+    let out = [];
+    each part of parts {
+        out.push(part.trim());
+    }
+    return out;
+};
+
+// ── wire up the button ────────────────────────────────────────────────────────
+
+callBtn.OnClick((ctrlId, notifyCode) => {
+    let libName  = libEdit.GetText().trim();
+    let fnName   = fnEdit.GetText().trim();
+    let retType  = retEdit.GetText().trim();
+    let typesStr = typesEdit.GetText().trim();
+    let argsStr  = argsEdit.GetText().trim();
+
+    try {
+        let argTypes = parseTypes(typesStr);
+        let args = Std.eval(argsStr);
+        if args == null {
+            args = [];
+        }
+
+        let lib = Std.Dlopen(libName);
+        if lib == null {
+            resultEdit.SetText("Failed to load library: " + libName);
+            return null;
+        }
+
+        let fnPtr = lib.sym(fnName);
+        if fnPtr == null {
+            resultEdit.SetText("Failed to resolve symbol: " + fnName);
+            return null;
+        }
+
+        let result = Std.Ccall(fnPtr, retType, argTypes, args);
+        resultEdit.SetText("Result: " + Std.string(result));
+    } catch (err) {
+        resultEdit.SetText("Error: " + Std.string(err));
+    }
+
+    return null;
+});
+
+// ── quit the app when the window closes ──────────────────────────────────────
+
+let WM_DESTROY = 2;
+win.On(WM_DESTROY, (wParam, lParam) => {
+    Std.Windows.GUI.PostQuit(0);
+    return 0;
+});
+
+Std.Windows.GUI.RunMessageLoop();

@@ -1,0 +1,19 @@
+// Async functions and await
+function async delay(ms) {
+  return Std.sleep(ms);
+}
+
+function async fetchData() {
+  Std.println("Fetching...");
+  await delay(10)
+  Std.println("Done!");
+  return { status: 200, data: "hello" }
+}
+
+// async arrow function
+let asyncDouble = async x => {
+  return x * 2;
+}
+let p = await fetchData();
+Std.println(f"Status: {p.status}");
+Std.println(f"Data: {p.data}");

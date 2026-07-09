@@ -1,0 +1,40 @@
+// try / catch / finally
+try {
+  throw "something went wrong";
+} catch e {
+  Std.println("Caught:", e);
+} finally {
+  Std.println("Finally runs always");
+}
+
+// Custom error object
+try {
+  throw { code: 404, message: "Not found" }
+} catch e {
+  Std.println(f"Error {e.code}: {e.message}");
+}
+
+// Error in function
+function divide(a, b) {
+  if b == 0 { throw "Division by zero" }
+  return a / b;
+}
+
+try {
+  Std.println(divide(10, 2));
+  Std.println(divide(10, 0));
+} catch e {
+  Std.println("Caught:", e);
+}
+
+// Nested try
+try {
+  try {
+    throw "inner error";
+  } catch e {
+    Std.println("Inner caught:", e);
+    throw "rethrown";
+  }
+} catch e {
+  Std.println("Outer caught:", e);
+}
