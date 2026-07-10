@@ -27,33 +27,6 @@ else()
 endif()
 
 # ════════════════════════════════════════════════════════════════════════════
-#  tree-sitter
-# ════════════════════════════════════════════════════════════════════════════
-
-set(TREE_SITTER_DIR ${CMAKE_SOURCE_DIR}/tree-sitter-deps/tree-sitter)
-set(TREE_SITTER_JS  ${CMAKE_SOURCE_DIR}/tree-sitter-deps/tree-sitter-javascript)
-set(TREE_SITTER_PY  ${CMAKE_SOURCE_DIR}/tree-sitter-deps/tree-sitter-python)
-
-set(TREE_SITTER_SOURCES
-    ${TREE_SITTER_DIR}/lib/src/lib.c
-    ${TREE_SITTER_JS}/src/parser.c
-    ${TREE_SITTER_JS}/src/scanner.c
-    ${TREE_SITTER_PY}/src/parser.c
-    ${TREE_SITTER_PY}/src/scanner.c
-)
-
-set_source_files_properties(${TREE_SITTER_SOURCES} PROPERTIES LANGUAGE C)
-set_source_files_properties(${TREE_SITTER_SOURCES} PROPERTIES
-    COMPILE_FLAGS "-w -I${CMAKE_SOURCE_DIR}/tree-sitter-deps/tree-sitter/lib/src"
-)
-
-if(NOT MSVC)
-    set_source_files_properties(${TREE_SITTER_SOURCES} PROPERTIES COMPILE_FLAGS "-w -I${CMAKE_SOURCE_DIR}/tree-sitter-deps/tree-sitter/lib/src")
-else()
-    set_source_files_properties(${TREE_SITTER_SOURCES} PROPERTIES COMPILE_FLAGS "/W0")
-endif()
-
-# ════════════════════════════════════════════════════════════════════════════
 #  platform libs
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -118,7 +91,6 @@ set(NOVAC_SOURCES
     src/cli/cli_dump.cpp
     src/cli/cli_misc.cpp
     bin/main.cpp
-    ${TREE_SITTER_SOURCES}
 )
 
 add_executable(novac ${NOVAC_SOURCES})
@@ -126,7 +98,6 @@ add_executable(novac ${NOVAC_SOURCES})
 target_include_directories(novac PRIVATE
     src
     .
-    ${TREE_SITTER_DIR}/lib/include
     ${PLATFORM_INCLUDE_DIRS}
 )
 
