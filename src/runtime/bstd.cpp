@@ -208,11 +208,19 @@ std::string hash(const std::string& data, const std::string& algo) {
 #else
     cmd = "echo -n \"" + data + "\" | sha256sum | cut -d' ' -f1";
 #endif
+#ifdef _MSC_VER
+    FILE* pipe = _popen(cmd.c_str(), "r");
+#else
     FILE* pipe = popen(cmd.c_str(), "r");
+#endif
     if (pipe) {
         char buf[128]; std::string result;
         while (fgets(buf, sizeof(buf), pipe)) result += buf;
+#ifdef _MSC_VER
+        _pclose(pipe);
+#else
         pclose(pipe);
+#endif
         // trim
         result.erase(result.find_last_not_of(" \t\r\n") + 1);
         if (!result.empty() && result.size() >= 32) return result.substr(0, 64);

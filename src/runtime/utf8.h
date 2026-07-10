@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+#endif
 #include <algorithm>
 
 namespace utf8 {

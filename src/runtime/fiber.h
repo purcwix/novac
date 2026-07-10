@@ -14,6 +14,9 @@
     #include <windows.h>
 #elif defined(__APPLE__) || defined(__linux__)
     #define NOVA_FIBER_UCONTEXT
+    #if defined(__APPLE__) && !defined(_XOPEN_SOURCE)
+        #define _XOPEN_SOURCE 700
+    #endif
     #include <ucontext.h>
 #else
     #error "Unsupported platform for fibers"
