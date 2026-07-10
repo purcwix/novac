@@ -257,7 +257,13 @@ inline Val nova_socket_from(std::shared_ptr<NovaSocket> ns)
 
         int rc = getaddrinfo(host.c_str(), portStr.c_str(), &hints, &res);
         if (rc != 0)
-            throw std::runtime_error(std::string("connect: DNS failed: ") + gai_strerror(rc));
+            throw std::runtime_error(std::string("connect: DNS failed: ") +
+#ifdef _WIN32
+                gai_strerrorA(rc)
+#else
+                gai_strerror(rc)
+#endif
+            );
 
         bool ok = false;
         for (auto* p = res; p; p = p->ai_next) {
