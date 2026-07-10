@@ -49,10 +49,13 @@ jobs:
         if: matrix.cross
         run: |
           sudo apt-get update
-          sudo dpkg --add-architecture arm64 || true
-          sudo apt-get update || true
+          sudo dpkg --add-architecture arm64
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          sudo sed -i 's/^deb http/deb [arch=amd64] http/' /etc/apt/sources.list
+          sudo apt-get update
           sudo apt-get install -y cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          sudo apt-get install -y libffi-dev:arm64 libssl-dev:arm64 || true
+          sudo apt-get install -y libffi-dev:arm64 libssl-dev:arm64
 
       - name: Write ARM64 toolchain file
         if: matrix.cross
@@ -79,7 +82,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # MSYS2 is pre-installed on GitHub Actions Windows runners
           C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-libffi mingw-w64-x86_64-openssl"
 
       # ── Configure ────────────────────────────────────────────
