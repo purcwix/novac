@@ -1,5 +1,4 @@
 #include "../src/cli/cli.h"
-#include "src/cli/port.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -273,22 +272,6 @@ int main(int argc, char *argv[])
         std::cerr << yellow("Package management has moved to nv+") << "\n";
         std::cerr << gray("  nv+ install <pkg>\n  nv+ remove <pkg>\n  nv+ list\n  nv+ --help\n");
         return 1;
-    }
-
-    if (sub == "port")
-    {
-        if (rest.empty())
-        {
-            std::cerr << red("Usage: novac port <file.js|file.py>") << "\n";
-            return 1;
-        }
-        std::string targetLang = "nova";
-        for (size_t i = 1; i < rest.size(); i++)
-        {
-            if (rest[i] == "--to" && i + 1 < rest.size())
-                targetLang = rest[++i];
-        }
-        return cmdPort(rest[0], targetLang);
     }
 
     // ── default: treat as file to run ────────────────────────────────────────
