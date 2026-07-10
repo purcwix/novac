@@ -101,7 +101,7 @@ jobs:
             -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT \
             -DFFI_INCLUDE_DIR=$(brew --prefix libffi)/include \
             -DFFI_LIBRARY=$(brew --prefix libffi)/lib/libffi.dylib \
-            -DCMAKE_EXE_LINKER_FLAGS="-framework Security -framework CoreFoundation"
+
 
       - name: Configure (Windows MinGW)
         if: runner.os == 'Windows'
