@@ -141,7 +141,9 @@ endif()
 if(PLATFORM_LINK_DIRS)
     target_link_directories(novac PRIVATE ${PLATFORM_LINK_DIRS})
 endif()
-
+if(APPLE)
+    target_link_libraries(novac "-framework Security" "-framework CoreFoundation")
+endif()
 target_link_libraries(novac PRIVATE ${PLATFORM_LIBS})
 
 # ════════════════════════════════════════════════════════════════════════════
