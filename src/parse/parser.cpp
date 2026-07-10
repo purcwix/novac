@@ -2330,12 +2330,13 @@ namespace novac
                 auto n = makeNode(Node::Kind::Call, t.line, t.column);
                 n->callee = std::move(left);
                 n->callArgs = parseCallArgs();
-                // struct call: Name(...) { field: val, ... }
-                // A `{` immediately following the call's closing `)` is treated
+                // struct call: Name(...).{ field: val, ... }
+                // A `. {` immediately following the call's closing `)` is treated
                 // as a struct literal supplying the call's field map, rather
                 // than the start of a new (unrelated) block statement.
-                if (check(TT::PUNCTUATION, "{"))
+                if (check(TT::PUNCTUATION, ".") && peek(1).type == TT::PUNCTUATION && peek(1).value == "{")
                 {
+                    advance();
                     auto sc = makeNode(Node::Kind::StructCall, t.line, t.column);
                     sc->callee = std::move(n->callee);
                     sc->callArgs = std::move(n->callArgs);
