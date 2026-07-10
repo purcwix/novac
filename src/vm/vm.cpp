@@ -50,6 +50,32 @@
 #include <complex>
 #include <valarray>
 #include <charconv>
+
+namespace novac {
+    // Apple's shipped libc++ (still true as of Xcode 16.4) does not implement
+    // the floating-point overload of std::from_chars, only the integer one.
+    // On that overload resolution falls through to a deleted bool overload
+    // and fails to compile. Route through strtod there; use std::from_chars
+    // everywhere else since it's faster and locale-independent.
+    inline std::from_chars_result portable_from_chars_double(const char* first, const char* last, double& value)
+    {
+#if defined(__APPLE__)
+        std::string tmp(first, last);
+        char* endp = nullptr;
+        errno = 0;
+        double v = std::strtod(tmp.c_str(), &endp);
+        if (endp == tmp.c_str()) {
+            return std::from_chars_result{ first, std::errc::invalid_argument };
+        }
+        value = v;
+        const char* newLast = first + (endp - tmp.c_str());
+        return std::from_chars_result{ newLast, std::errc{} };
+#else
+        return std::from_chars(first, last, value);
+#endif
+    }
+}
+
 #include <bit> // C++20
 
 #ifndef M_PI
@@ -16489,7 +16515,7 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
             }
             // try float (base 10 only)
             double fval = 0;
-            auto [fptr, fec] = std::from_chars(s.data(), s.data() + s.size(), fval);
+            auto [fptr, fec] = portable_from_chars_double(s.data(), s.data() + s.size(), fval);
             if (fec == std::errc{}) {
                 res->obj->set("value", nova_num(fval));
                 res->obj->set("ok", nova_bool(true));
@@ -16543,7 +16569,7 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
             if (a.empty()) return nova_null();
             std::string s = a[0].asString();
             double v = 0;
-            auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), v);
+            auto [ptr, ec] = portable_from_chars_double(s.data(), s.data() + s.size(), v);
             return ec == std::errc{} ? nova_num(v) : nova_null(); }, "parseFloat"));
 
         obj->obj->set("Charconv", cc);
