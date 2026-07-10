@@ -21,7 +21,7 @@ jobs:
             artifact: novac-windows-x86_64
 
           - name: macOS x86-64
-            os: macos-13
+            os: macos-latest
             artifact: novac-macos-x86_64
 
           - name: macOS ARM64
