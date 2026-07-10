@@ -16,7 +16,7 @@ jobs:
             os: ubuntu-latest
             artifact: novac-linux-x86_64
 
-          - name: Windows x86-64
+          - name: Windows x86-64 (MinGW)
             os: windows-latest
             artifact: novac-windows-x86_64
 
@@ -39,10 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Linux native ─────────────────────────────────────────
       - name: Install deps (Linux native)
         if: runner.os == 'Linux' && !matrix.cross
         run: sudo apt-get update && sudo apt-get install -y libffi-dev libssl-dev cmake
 
+      # ── Linux ARM64 cross ────────────────────────────────────
       - name: Install deps (Linux ARM64 cross)
         if: matrix.cross
         run: |
@@ -54,6 +56,7 @@ jobs:
 
       - name: Write ARM64 toolchain file
         if: matrix.cross
+        shell: bash
         run: |
           mkdir -p .github/toolchains
           cat > .github/toolchains/linux-arm64.cmake << 'EOF'
@@ -66,38 +69,79 @@ jobs:
           set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
           EOF
 
+      # ── macOS ────────────────────────────────────────────────
       - name: Install deps (macOS)
         if: runner.os == 'macOS'
         run: brew install libffi openssl cmake
 
-      - name: Install deps (Windows)
+      # ── Windows (MinGW via MSYS2) ────────────────────────────
+      - name: Install deps (Windows MinGW)
         if: runner.os == 'Windows'
-        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        shell: pwsh
+        run: |
+          # MSYS2 is pre-installed on GitHub Actions Windows runners
+          C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-libffi mingw-w64-x86_64-openssl"
 
-      - name: Configure (native)
-        if: '!matrix.cross'
+      # ── Configure ────────────────────────────────────────────
+      - name: Configure (Linux native)
+        if: runner.os == 'Linux' && !matrix.cross
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Configure (cross ARM64)
-        if: matrix.cross
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=.github/toolchains/linux-arm64.cmake
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          OPENSSL_ROOT=$(brew --prefix openssl)
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT \
+            -DFFI_INCLUDE_DIR=$(brew --prefix libffi)/include \
+            -DFFI_LIBRARY=$(brew --prefix libffi)/lib/libffi.dylib
 
-      - name: Build
+      - name: Configure (Windows MinGW)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+          cmake -B build -G "MinGW Makefiles" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER="C:/msys64/mingw64/bin/gcc.exe" `
+            -DCMAKE_CXX_COMPILER="C:/msys64/mingw64/bin/g++.exe" `
+            -DOPENSSL_ROOT_DIR="C:/msys64/mingw64" `
+            -DFFI_INCLUDE_DIR="C:/msys64/mingw64/include" `
+            -DFFI_LIBRARY="C:/msys64/mingw64/lib/libffi.a"
+
+      - name: Configure (Linux ARM64 cross)
+        if: matrix.cross
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=.github/toolchains/linux-arm64.cmake
+
+      # ── Build ────────────────────────────────────────────────
+      - name: Build (non-Windows)
+        if: runner.os != 'Windows'
         run: cmake --build build --config Release -j4
 
+      - name: Build (Windows MinGW)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+          cmake --build build --config Release -j4
+
+      # ── Collect ──────────────────────────────────────────────
       - name: Collect binaries (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir dist
-          cp build/novac dist/ 2>/dev/null || cp build/Release/novac dist/ 2>/dev/null || true
-          cp "build/nv+" dist/ 2>/dev/null || cp "build/Release/nv+" dist/ 2>/dev/null || true
+          cp build/novac dist/ 2>/dev/null || true
+          cp "build/nv+" dist/ 2>/dev/null || true
 
       - name: Collect binaries (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist
-          Copy-Item build\Release\novac.exe dist\ -ErrorAction SilentlyContinue
-          Copy-Item "build\Release\nv+.exe"  dist\ -ErrorAction SilentlyContinue
+          Copy-Item build\novac.exe  dist\ -ErrorAction SilentlyContinue
+          Copy-Item "build\nv+.exe"  dist\ -ErrorAction SilentlyContinue
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
