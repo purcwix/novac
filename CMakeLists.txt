@@ -117,7 +117,6 @@ set(NOVAC_SOURCES
     src/cli/cli.cpp
     src/cli/cli_dump.cpp
     src/cli/cli_misc.cpp
-    src/cli/port.cpp
     bin/main.cpp
     ${TREE_SITTER_SOURCES}
 )
