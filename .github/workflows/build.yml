@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [ master, main ]
+    tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
 
@@ -54,12 +55,9 @@ jobs:
           sudo find /etc/apt/sources.list.d/ -name "*.list" \
             -exec sudo sed -i 's/^deb http/deb [arch=amd64] http/; s/^deb https/deb [arch=amd64] https/' {} \;
           # Add arm64 ports sources (security.ubuntu.com doesn't serve arm64)
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs) main restricted universe multiver
-se" | sudo tee /etc/apt/sources.list.d/arm64.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-updates main restricted universe 
-multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe
- multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           # Ignore failures from security.ubuntu.com (no arm64 packages there)
           sudo apt-get update -o Acquire::AllowInsecureRepositories=true 2>&1 | grep -v "404\|Failed to fetch" || true
           sudo apt-get install -y cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
@@ -92,8 +90,7 @@ multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86
-_64-libffi mingw-w64-x86_64-openssl"
+          C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-libffi mingw-w64-x86_64-openssl"
 
       # ── Configure ────────────────────────────────────────────
       - name: Configure (Linux native)
@@ -126,8 +123,7 @@ _64-libffi mingw-w64-x86_64-openssl"
         if: matrix.cross
         env:
           PKG_CONFIG_PATH: ""
-          PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/aarch64-linux-gnu/lib/pkgconfig:/usr/share/pkgconfi
-g
+          PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/aarch64-linux-gnu/lib/pkgconfig:/usr/share/pkgconfig
           PKG_CONFIG_SYSROOT_DIR: /
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release \
@@ -167,3 +163,31 @@ g
           name: ${{ matrix.artifact }}
           path: dist/
           if-no-files-found: warn
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip each platform's binaries
+        run: |
+          cd artifacts
+          for d in */; do
+            name="${d%/}"
+            [ -z "$(ls -A "$name")" ] && continue
+            (cd "$name" && zip -r "../${name}.zip" .)
+          done
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: false
