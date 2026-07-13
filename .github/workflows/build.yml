@@ -135,7 +135,7 @@ jobs:
         if: matrix.win_arm64
         shell: pwsh
         run: |
-          $env:PATH = "C:\msys64\clangarm64\bin;$env:PATH"
+          $env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$env:PATH"
           cmake -B build -G "MinGW Makefiles" `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER="C:/msys64/clangarm64/bin/clang.exe" `
@@ -172,7 +172,7 @@ jobs:
         if: matrix.win_arm64
         shell: pwsh
         run: |
-          $env:PATH = "C:\msys64\clangarm64\bin;$env:PATH"
+          $env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$env:PATH"
           cmake --build build --config Release -j4
 
       # ── Collect ──────────────────────────────────────────────
