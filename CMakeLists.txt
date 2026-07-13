@@ -31,8 +31,11 @@ endif()
 # ════════════════════════════════════════════════════════════════════════════
 
 if(WIN32)
-    # Support both local MinGW and CI MSYS2 MinGW64
-    if(EXISTS "C:/tools/msys64/mingw64/include")
+    # Support local MinGW, CI MSYS2 MinGW64, and MSYS2 clangarm64 (Windows ARM64)
+    if(EXISTS "C:/msys64/clangarm64/include")
+        set(MINGW_LIB "C:/msys64/clangarm64/lib")
+        set(MINGW_INC "C:/msys64/clangarm64/include")
+    elseif(EXISTS "C:/tools/msys64/mingw64/include")
         set(MINGW_LIB "C:/tools/msys64/mingw64/lib")
         set(MINGW_INC "C:/tools/msys64/mingw64/include")
     elseif(EXISTS "C:/ProgramData/mingw64/mingw64/include")
