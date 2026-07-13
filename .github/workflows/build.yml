@@ -21,6 +21,11 @@ jobs:
             os: windows-latest
             artifact: novac-windows-x86_64
 
+          - name: Windows ARM64 (MinGW)
+            os: windows-latest
+            artifact: novac-windows-arm64
+            win_arm64: true
+
           - name: macOS x86-64
             os: macos-latest
             artifact: novac-macos-x86_64
@@ -85,12 +90,19 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install libffi openssl cmake
 
-      # ── Windows (MinGW via MSYS2) ────────────────────────────
+      # ── Windows x86-64 (MinGW via MSYS2) ────────────────────
       - name: Install deps (Windows MinGW)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !matrix.win_arm64
         shell: pwsh
         run: |
           C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-libffi mingw-w64-x86_64-openssl"
+
+      # ── Windows ARM64 (clangarm64 via MSYS2) ─────────────────
+      - name: Install deps (Windows ARM64 MinGW)
+        if: matrix.win_arm64
+        shell: pwsh
+        run: |
+          C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-openssl"
 
       # ── Configure ────────────────────────────────────────────
       - name: Configure (Linux native)
@@ -107,7 +119,7 @@ jobs:
             -DFFI_LIBRARY=$(brew --prefix libffi)/lib/libffi.dylib
 
       - name: Configure (Windows MinGW)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !matrix.win_arm64
         shell: pwsh
         run: |
           $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
@@ -118,6 +130,21 @@ jobs:
             -DOPENSSL_ROOT_DIR="C:/msys64/mingw64" `
             -DFFI_INCLUDE_DIR="C:/msys64/mingw64/include" `
             -DFFI_LIBRARY="C:/msys64/mingw64/lib/libffi.a"
+
+      - name: Configure (Windows ARM64)
+        if: matrix.win_arm64
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\msys64\clangarm64\bin;$env:PATH"
+          cmake -B build -G "MinGW Makefiles" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER="C:/msys64/clangarm64/bin/clang.exe" `
+            -DCMAKE_CXX_COMPILER="C:/msys64/clangarm64/bin/clang++.exe" `
+            -DCMAKE_SYSTEM_NAME=Windows `
+            -DCMAKE_SYSTEM_PROCESSOR=ARM64 `
+            -DOPENSSL_ROOT_DIR="C:/msys64/clangarm64" `
+            -DFFI_INCLUDE_DIR="C:/msys64/clangarm64/include" `
+            -DFFI_LIBRARY="C:/msys64/clangarm64/lib/libffi.a"
 
       - name: Configure (Linux ARM64 cross)
         if: matrix.cross
@@ -135,10 +162,17 @@ jobs:
         run: cmake --build build --config Release -j4
 
       - name: Build (Windows MinGW)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !matrix.win_arm64
         shell: pwsh
         run: |
           $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+          cmake --build build --config Release -j4
+
+      - name: Build (Windows ARM64)
+        if: matrix.win_arm64
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\msys64\clangarm64\bin;$env:PATH"
           cmake --build build --config Release -j4
 
       # ── Collect ──────────────────────────────────────────────
