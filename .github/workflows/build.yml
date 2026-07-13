@@ -22,7 +22,7 @@ jobs:
             artifact: novac-windows-x86_64
 
           - name: Windows ARM64 (MinGW)
-            os: windows-latest
+            os: windows-11-arm
             artifact: novac-windows-arm64
             win_arm64: true
 
@@ -97,12 +97,17 @@ jobs:
         run: |
           C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-libffi mingw-w64-x86_64-openssl"
 
-      # ── Windows ARM64 (clangarm64 via MSYS2) ─────────────────
-      - name: Install deps (Windows ARM64 MinGW)
+      # ── Windows ARM64 (native clangarm64 via MSYS2) ───────────
+      # This job now runs on the real windows-11-arm hosted runner, so the
+      # native clangarm64 MSYS2 subsystem is the right (and only) choice —
+      # no cross-compiling needed. MSYS2 itself must be installed first,
+      # since arm64 runner images don't ship it by default.
+      - name: Install MSYS2
         if: matrix.win_arm64
-        shell: pwsh
-        run: |
-          C:\msys64\usr\bin\bash.exe -lc "pacman -Sy --noconfirm mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-openssl"
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          install: mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-openssl
 
       # ── Configure ────────────────────────────────────────────
       - name: Configure (Linux native)
@@ -133,17 +138,14 @@ jobs:
 
       - name: Configure (Windows ARM64)
         if: matrix.win_arm64
-        shell: pwsh
+        shell: msys2 {0}
         run: |
-          $env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$env:PATH"
-          cmake -B build -G "MinGW Makefiles" `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER="C:/msys64/clangarm64/bin/clang.exe" `
-            -DCMAKE_CXX_COMPILER="C:/msys64/clangarm64/bin/clang++.exe" `
-            -DCMAKE_SYSTEM_NAME=Windows `
-            -DCMAKE_SYSTEM_PROCESSOR=ARM64 `
-            -DOPENSSL_ROOT_DIR="C:/msys64/clangarm64" `
-            -DFFI_INCLUDE_DIR="C:/msys64/clangarm64/include" `
+          cmake -B build -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="/clangarm64/bin/clang.exe" \
+            -DCMAKE_CXX_COMPILER="/clangarm64/bin/clang++.exe" \
+            -DOPENSSL_ROOT_DIR="C:/msys64/clangarm64" \
+            -DFFI_INCLUDE_DIR="C:/msys64/clangarm64/include" \
             -DFFI_LIBRARY="C:/msys64/clangarm64/lib/libffi.a"
 
       - name: Configure (Linux ARM64 cross)
@@ -170,10 +172,8 @@ jobs:
 
       - name: Build (Windows ARM64)
         if: matrix.win_arm64
-        shell: pwsh
-        run: |
-          $env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$env:PATH"
-          cmake --build build --config Release -j4
+        shell: msys2 {0}
+        run: cmake --build build --config Release -j4
 
       # ── Collect ──────────────────────────────────────────────
       - name: Collect binaries (Unix)
