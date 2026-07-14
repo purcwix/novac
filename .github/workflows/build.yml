@@ -107,7 +107,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: CLANGARM64
-          install: mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-openssl
+          install: mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-openssl mingw-w64-clang-aarch64-ninja
 
       # ── Configure ────────────────────────────────────────────
       - name: Configure (Linux native)
@@ -141,7 +141,7 @@ jobs:
         if: matrix.win_arm64
         shell: msys2 {0}
         run: |
-          cmake -B build -G "MinGW Makefiles" \
+          cmake -B build -G "Ninja" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="/clangarm64/bin/clang.exe" \
             -DCMAKE_CXX_COMPILER="/clangarm64/bin/clang++.exe" \
