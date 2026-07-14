@@ -112,7 +112,7 @@ jobs:
       # ── Configure ────────────────────────────────────────────
       - name: Configure (Linux native)
         if: runner.os == 'Linux' && !matrix.cross
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++"
 
       - name: Configure (macOS)
         if: runner.os == 'macOS'
@@ -132,6 +132,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER="C:/msys64/mingw64/bin/gcc.exe" `
             -DCMAKE_CXX_COMPILER="C:/msys64/mingw64/bin/g++.exe" `
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" `
             -DOPENSSL_ROOT_DIR="C:/msys64/mingw64" `
             -DFFI_INCLUDE_DIR="C:/msys64/mingw64/include" `
             -DFFI_LIBRARY="C:/msys64/mingw64/lib/libffi.a"
@@ -144,6 +145,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="/clangarm64/bin/clang.exe" \
             -DCMAKE_CXX_COMPILER="/clangarm64/bin/clang++.exe" \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
             -DOPENSSL_ROOT_DIR="C:/msys64/clangarm64" \
             -DFFI_INCLUDE_DIR="C:/msys64/clangarm64/include" \
             -DFFI_LIBRARY="C:/msys64/clangarm64/lib/libffi.a"
@@ -156,6 +158,7 @@ jobs:
           PKG_CONFIG_SYSROOT_DIR: /
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++" \
             -DCMAKE_TOOLCHAIN_FILE=.github/toolchains/linux-arm64.cmake
 
       # ── Build ────────────────────────────────────────────────
