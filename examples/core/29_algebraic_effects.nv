@@ -1,0 +1,18 @@
+// ── Example 2: Logging effect (resumable) ────────────────────────────────
+// Instead of threading a logger through every function, perform a Log effect
+// and let the handler decide what to do, then resume execution.
+
+function compute(a, b) {
+  perform Log("computing sum...");
+  let result = a + b;
+  perform Log(f"result is {result}");
+  return result;
+}
+
+try {
+  let val = compute(10, 20);
+  Std.println(f"Final value: {val}");
+} handle Log(msg) {
+  Std.println(f"[LOG] {msg}");
+  return; // return is the 'resume' function
+}
