@@ -1913,9 +1913,11 @@ int cmdPublish()
             std::cerr << red("git init failed.") << "\n";
             return 1;
         }
-        runSilent({"git", "-C", cwd.string(), "add", "."});
-        runSilent({"git", "-C", cwd.string(), "commit", "-m", "initial commit"});
     }
+
+    // Always stage and commit current state so every publish pushes the right source
+    runSilent({"git", "-C", cwd.string(), "add", "."});
+    runSilent({"git", "-C", cwd.string(), "commit", "-m", "publish " + pkgName + " @ " + version});
 
     std::cout << gray("  pushing source to github.com/" + username + "/" + pkgName + "...") << "\n";
     runSilent({"git", "-C", cwd.string(), "remote", "remove", "origin"});
