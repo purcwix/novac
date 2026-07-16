@@ -15,8 +15,8 @@
 #include <windows.h>
 #include <ocidl.h> // IConnectionPoint, IConnectionPointContainer, IID_IConnectionPointContainer
 #include <tlhelp32.h>
-#include <shlobj.h>    // SHGetSpecialFolderPath, CSIDL_*
-#include <shellapi.h>  // ShellExecuteA
+#include <shlobj.h>   // SHGetSpecialFolderPath, CSIDL_*
+#include <shellapi.h> // ShellExecuteA
 #include <mmsystem.h> // PlaySound, mciSendString
 #include <dbt.h>      // DEV_BROADCAST_DEVICEINTERFACE, RegisterDeviceNotification
 #else
@@ -76,25 +76,27 @@
 #include <valarray>
 #include <charconv>
 
-namespace novac {
+namespace novac
+{
     // Apple's shipped libc++ (still true as of Xcode 16.4) does not implement
     // the floating-point overload of std::from_chars, only the integer one.
     // On that overload resolution falls through to a deleted bool overload
     // and fails to compile. Route through strtod there; use std::from_chars
     // everywhere else since it's faster and locale-independent.
-    inline std::from_chars_result portable_from_chars_double(const char* first, const char* last, double& value)
+    inline std::from_chars_result portable_from_chars_double(const char *first, const char *last, double &value)
     {
 #if defined(__APPLE__)
         std::string tmp(first, last);
-        char* endp = nullptr;
+        char *endp = nullptr;
         errno = 0;
         double v = std::strtod(tmp.c_str(), &endp);
-        if (endp == tmp.c_str()) {
-            return std::from_chars_result{ first, std::errc::invalid_argument };
+        if (endp == tmp.c_str())
+        {
+            return std::from_chars_result{first, std::errc::invalid_argument};
         }
         value = v;
-        const char* newLast = first + (endp - tmp.c_str());
-        return std::from_chars_result{ newLast, std::errc{} };
+        const char *newLast = first + (endp - tmp.c_str());
+        return std::from_chars_result{newLast, std::errc{}};
 #else
         return std::from_chars(first, last, value);
 #endif
@@ -15356,52 +15358,57 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
 #if defined(_WIN32)
         {
             Val winObj = std_obj->obj->get("Windows");
-            if (!winObj || winObj.isNull()) { winObj = nova_obj(); std_obj->obj->set("Windows", winObj); }
+            if (!winObj || winObj.isNull())
+            {
+                winObj = nova_obj();
+                std_obj->obj->set("Windows", winObj);
+            }
 
             // ── Beep ──────────────────────────────────────────────────────────
             // Std.Windows.Beep(freq, ms)  — wraps kernel32 Beep()
-            winObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                           {
                 DWORD freq = a.size() > 0 ? (DWORD)a[0].asNumber() : 750;
                 DWORD ms   = a.size() > 1 ? (DWORD)a[1].asNumber() : 300;
-                return nova_bool(::Beep(freq, ms) != 0);
-            }, "Beep"));
+                return nova_bool(::Beep(freq, ms) != 0); }, "Beep"));
 
             // ── MessageBox ────────────────────────────────────────────────────
-            winObj->obj->set("MessageBox", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("MessageBox", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                 std::string text  = a.size() > 0 ? a[0].asString() : "";
                 std::string title = a.size() > 1 ? a[1].asString() : "Nova";
                 UINT type         = a.size() > 2 ? (UINT)a[2].asNumber() : MB_OK;
-                return nova_num((double)MessageBoxA(nullptr, text.c_str(), title.c_str(), type));
-            }, "MessageBox"));
+                return nova_num((double)MessageBoxA(nullptr, text.c_str(), title.c_str(), type)); }, "MessageBox"));
 
             // ── MessageBox type constants ─────────────────────────────────────
-            winObj->obj->set("MB_OK",               nova_num(MB_OK));
-            winObj->obj->set("MB_OKCANCEL",         nova_num(MB_OKCANCEL));
-            winObj->obj->set("MB_YESNO",            nova_num(MB_YESNO));
-            winObj->obj->set("MB_YESNOCANCEL",      nova_num(MB_YESNOCANCEL));
-            winObj->obj->set("MB_RETRYCANCEL",      nova_num(MB_RETRYCANCEL));
-            winObj->obj->set("MB_ICONERROR",        nova_num(MB_ICONERROR));
-            winObj->obj->set("MB_ICONWARNING",      nova_num(MB_ICONWARNING));
-            winObj->obj->set("MB_ICONINFORMATION",  nova_num(MB_ICONINFORMATION));
-            winObj->obj->set("MB_ICONQUESTION",     nova_num(MB_ICONQUESTION));
-            winObj->obj->set("IDOK",                nova_num(IDOK));
-            winObj->obj->set("IDCANCEL",            nova_num(IDCANCEL));
-            winObj->obj->set("IDYES",               nova_num(IDYES));
-            winObj->obj->set("IDNO",                nova_num(IDNO));
-            winObj->obj->set("IDRETRY",             nova_num(IDRETRY));
+            winObj->obj->set("MB_OK", nova_num(MB_OK));
+            winObj->obj->set("MB_OKCANCEL", nova_num(MB_OKCANCEL));
+            winObj->obj->set("MB_YESNO", nova_num(MB_YESNO));
+            winObj->obj->set("MB_YESNOCANCEL", nova_num(MB_YESNOCANCEL));
+            winObj->obj->set("MB_RETRYCANCEL", nova_num(MB_RETRYCANCEL));
+            winObj->obj->set("MB_ICONERROR", nova_num(MB_ICONERROR));
+            winObj->obj->set("MB_ICONWARNING", nova_num(MB_ICONWARNING));
+            winObj->obj->set("MB_ICONINFORMATION", nova_num(MB_ICONINFORMATION));
+            winObj->obj->set("MB_ICONQUESTION", nova_num(MB_ICONQUESTION));
+            winObj->obj->set("IDOK", nova_num(IDOK));
+            winObj->obj->set("IDCANCEL", nova_num(IDCANCEL));
+            winObj->obj->set("IDYES", nova_num(IDYES));
+            winObj->obj->set("IDNO", nova_num(IDNO));
+            winObj->obj->set("IDRETRY", nova_num(IDRETRY));
 
             // ── Clipboard ─────────────────────────────────────────────────────
-            winObj->obj->set("GetClipboardText", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetClipboardText", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                       {
                 if (!OpenClipboard(nullptr)) return nova_null();
                 HANDLE h = GetClipboardData(CF_TEXT);
                 if (!h) { CloseClipboard(); return nova_null(); }
                 char *p = (char *)GlobalLock(h);
                 std::string s = p ? p : "";
                 GlobalUnlock(h); CloseClipboard();
-                return nova_str(s);
-            }, "GetClipboardText"));
+                return nova_str(s); }, "GetClipboardText"));
 
-            winObj->obj->set("SetClipboardText", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("SetClipboardText", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                 if (a.empty() || !OpenClipboard(nullptr)) return nova_bool(false);
                 std::string s = a[0].asString();
                 EmptyClipboard();
@@ -15412,101 +15419,106 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 GlobalUnlock(h);
                 SetClipboardData(CF_TEXT, h);
                 CloseClipboard();
-                return nova_bool(true);
-            }, "SetClipboardText"));
+                return nova_bool(true); }, "SetClipboardText"));
 
             // ── Registry ──────────────────────────────────────────────────────
             auto regObj = nova_obj();
 
-            auto resolveHive = [](const std::string &name) -> HKEY {
-                if (name == "HKLM" || name == "HKEY_LOCAL_MACHINE") return HKEY_LOCAL_MACHINE;
-                if (name == "HKCU" || name == "HKEY_CURRENT_USER")  return HKEY_CURRENT_USER;
-                if (name == "HKCR" || name == "HKEY_CLASSES_ROOT")  return HKEY_CLASSES_ROOT;
-                if (name == "HKU"  || name == "HKEY_USERS")         return HKEY_USERS;
+            auto resolveHive = [](const std::string &name) -> HKEY
+            {
+                if (name == "HKLM" || name == "HKEY_LOCAL_MACHINE")
+                    return HKEY_LOCAL_MACHINE;
+                if (name == "HKCU" || name == "HKEY_CURRENT_USER")
+                    return HKEY_CURRENT_USER;
+                if (name == "HKCR" || name == "HKEY_CLASSES_ROOT")
+                    return HKEY_CLASSES_ROOT;
+                if (name == "HKU" || name == "HKEY_USERS")
+                    return HKEY_USERS;
                 return HKEY_CURRENT_USER;
             };
 
-            regObj->obj->set("GetString", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val {
+            regObj->obj->set("GetString", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val
+                                                                {
                 if (a.size() < 3) return nova_null();
                 HKEY hive = resolveHive(a[0].asString());
                 HKEY key; if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_READ, &key) != ERROR_SUCCESS) return nova_null();
                 char buf[4096]; DWORD sz = sizeof(buf), type;
                 LSTATUS st = RegQueryValueExA(key, a[2].asString().c_str(), nullptr, &type, (LPBYTE)buf, &sz);
                 RegCloseKey(key);
-                return (st == ERROR_SUCCESS && (type == REG_SZ || type == REG_EXPAND_SZ)) ? nova_str(std::string(buf, sz > 0 ? sz - 1 : 0)) : nova_null();
-            }, "GetString"));
+                return (st == ERROR_SUCCESS && (type == REG_SZ || type == REG_EXPAND_SZ)) ? nova_str(std::string(buf, sz > 0 ? sz - 1 : 0)) : nova_null(); }, "GetString"));
 
-            regObj->obj->set("SetString", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val {
+            regObj->obj->set("SetString", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val
+                                                                {
                 if (a.size() < 4) return nova_bool(false);
                 HKEY hive = resolveHive(a[0].asString()); HKEY key;
                 if (RegCreateKeyExA(hive, a[1].asString().c_str(), 0, nullptr, 0, KEY_WRITE, nullptr, &key, nullptr) != ERROR_SUCCESS) return nova_bool(false);
                 std::string val = a[3].asString();
                 LSTATUS st = RegSetValueExA(key, a[2].asString().c_str(), 0, REG_SZ, (LPBYTE)val.c_str(), (DWORD)(val.size() + 1));
                 RegCloseKey(key);
-                return nova_bool(st == ERROR_SUCCESS);
-            }, "SetString"));
+                return nova_bool(st == ERROR_SUCCESS); }, "SetString"));
 
-            regObj->obj->set("GetDWORD", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val {
+            regObj->obj->set("GetDWORD", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val
+                                                               {
                 if (a.size() < 3) return nova_null();
                 HKEY hive = resolveHive(a[0].asString()); HKEY key;
                 if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_READ, &key) != ERROR_SUCCESS) return nova_null();
                 DWORD val, sz = sizeof(DWORD), type;
                 LSTATUS st = RegQueryValueExA(key, a[2].asString().c_str(), nullptr, &type, (LPBYTE)&val, &sz);
                 RegCloseKey(key);
-                return (st == ERROR_SUCCESS && type == REG_DWORD) ? nova_num((double)val) : nova_null();
-            }, "GetDWORD"));
+                return (st == ERROR_SUCCESS && type == REG_DWORD) ? nova_num((double)val) : nova_null(); }, "GetDWORD"));
 
-            regObj->obj->set("DeleteValue", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val {
+            regObj->obj->set("DeleteValue", NovaValue::makeNative([resolveHive](ValVec a, auto) -> Val
+                                                                  {
                 if (a.size() < 3) return nova_bool(false);
                 HKEY hive = resolveHive(a[0].asString()); HKEY key;
                 if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_WRITE, &key) != ERROR_SUCCESS) return nova_bool(false);
                 LSTATUS st = RegDeleteValueA(key, a[2].asString().c_str());
-                RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS);
-            }, "DeleteValue"));
+                RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS); }, "DeleteValue"));
 
             winObj->obj->set("Registry", regObj);
 
             // ── Shell ─────────────────────────────────────────────────────────
             auto shellObj = nova_obj();
 
-            shellObj->obj->set("Execute", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            shellObj->obj->set("Execute", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                {
                 if (a.empty()) return nova_bool(false);
                 std::string op   = a.size() > 1 ? a[1].asString() : "open";
                 std::string file = a[0].asString();
                 HINSTANCE r = ShellExecuteA(nullptr, op.c_str(), file.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-                return nova_bool((intptr_t)r > 32);
-            }, "Execute"));
+                return nova_bool((intptr_t)r > 32); }, "Execute"));
 
-            shellObj->obj->set("GetSpecialFolder", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            shellObj->obj->set("GetSpecialFolder", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                         {
                 int csidl = a.empty() ? CSIDL_DESKTOPDIRECTORY : (int)a[0].asNumber();
                 char path[MAX_PATH] = {};
                 SHGetSpecialFolderPathA(nullptr, path, csidl, FALSE);
-                return nova_str(path);
-            }, "GetSpecialFolder"));
+                return nova_str(path); }, "GetSpecialFolder"));
 
             // Common CSIDL constants
-            shellObj->obj->set("DESKTOP",   nova_num(CSIDL_DESKTOPDIRECTORY));
+            shellObj->obj->set("DESKTOP", nova_num(CSIDL_DESKTOPDIRECTORY));
             shellObj->obj->set("DOCUMENTS", nova_num(CSIDL_PERSONAL));
-            shellObj->obj->set("APPDATA",   nova_num(CSIDL_APPDATA));
+            shellObj->obj->set("APPDATA", nova_num(CSIDL_APPDATA));
             shellObj->obj->set("LOCALAPPDATA", nova_num(CSIDL_LOCAL_APPDATA));
-            shellObj->obj->set("TEMP",      nova_num(CSIDL_INTERNET_CACHE));
-            shellObj->obj->set("STARTUP",   nova_num(CSIDL_STARTUP));
-            shellObj->obj->set("PROGRAMS",  nova_num(CSIDL_PROGRAMS));
+            shellObj->obj->set("TEMP", nova_num(CSIDL_INTERNET_CACHE));
+            shellObj->obj->set("STARTUP", nova_num(CSIDL_STARTUP));
+            shellObj->obj->set("PROGRAMS", nova_num(CSIDL_PROGRAMS));
 
             winObj->obj->set("Shell", shellObj);
 
             // ── System info ───────────────────────────────────────────────────
-            winObj->obj->set("GetSystemInfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetSystemInfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                    {
                 SYSTEM_INFO si; GetSystemInfo(&si);
                 auto obj = nova_obj();
                 obj->obj->set("processorCount",      nova_num((double)si.dwNumberOfProcessors));
                 obj->obj->set("pageSize",            nova_num((double)si.dwPageSize));
                 obj->obj->set("processorType",       nova_num((double)si.dwProcessorType));
                 obj->obj->set("processorArchitecture", nova_num((double)si.wProcessorArchitecture));
-                return obj;
-            }, "GetSystemInfo"));
+                return obj; }, "GetSystemInfo"));
 
-            winObj->obj->set("GetMemoryStatus", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetMemoryStatus", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                      {
                 MEMORYSTATUSEX ms; ms.dwLength = sizeof(ms); GlobalMemoryStatusEx(&ms);
                 auto obj = nova_obj();
                 obj->obj->set("memoryLoad",         nova_num((double)ms.dwMemoryLoad));
@@ -15516,50 +15528,49 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("availPageFile",      nova_num((double)ms.ullAvailPageFile));
                 obj->obj->set("totalVirtual",       nova_num((double)ms.ullTotalVirtual));
                 obj->obj->set("availVirtual",       nova_num((double)ms.ullAvailVirtual));
-                return obj;
-            }, "GetMemoryStatus"));
+                return obj; }, "GetMemoryStatus"));
 
-            winObj->obj->set("GetComputerName", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetComputerName", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                      {
                 char buf[MAX_COMPUTERNAME_LENGTH + 1] = {}; DWORD sz = sizeof(buf);
                 GetComputerNameA(buf, &sz);
-                return nova_str(buf);
-            }, "GetComputerName"));
+                return nova_str(buf); }, "GetComputerName"));
 
-            winObj->obj->set("GetUserName", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetUserName", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                  {
                 char buf[256] = {}; DWORD sz = sizeof(buf);
                 GetUserNameA(buf, &sz);
-                return nova_str(buf);
-            }, "GetUserName"));
+                return nova_str(buf); }, "GetUserName"));
 
-            winObj->obj->set("GetWindowsVersion", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetWindowsVersion", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                        {
                 OSVERSIONINFOEXA osi; ZeroMemory(&osi, sizeof(osi)); osi.dwOSVersionInfoSize = sizeof(osi);
-#pragma warning(suppress: 4996)
+#pragma warning(suppress : 4996)
                 GetVersionExA((LPOSVERSIONINFOA)&osi);
                 auto obj = nova_obj();
                 obj->obj->set("major",       nova_num((double)osi.dwMajorVersion));
                 obj->obj->set("minor",       nova_num((double)osi.dwMinorVersion));
                 obj->obj->set("build",       nova_num((double)osi.dwBuildNumber));
                 obj->obj->set("servicePack", nova_str(osi.szCSDVersion));
-                return obj;
-            }, "GetWindowsVersion"));
+                return obj; }, "GetWindowsVersion"));
 
             // ── Timing (multimedia) ────────────────────────────────────────────
-            winObj->obj->set("QueryPerformanceCounter", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("QueryPerformanceCounter", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                              {
                 LARGE_INTEGER li; QueryPerformanceCounter(&li);
-                return nova_num((double)li.QuadPart);
-            }, "QueryPerformanceCounter"));
+                return nova_num((double)li.QuadPart); }, "QueryPerformanceCounter"));
 
-            winObj->obj->set("QueryPerformanceFrequency", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("QueryPerformanceFrequency", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                                {
                 LARGE_INTEGER li; QueryPerformanceFrequency(&li);
-                return nova_num((double)li.QuadPart);
-            }, "QueryPerformanceFrequency"));
+                return nova_num((double)li.QuadPart); }, "QueryPerformanceFrequency"));
 
-            winObj->obj->set("GetTickCount", NovaValue::makeNative([](ValVec, auto) -> Val {
-                return nova_num((double)GetTickCount64());
-            }, "GetTickCount"));
+            winObj->obj->set("GetTickCount", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   { return nova_num((double)GetTickCount64()); }, "GetTickCount"));
 
             // ── Power ─────────────────────────────────────────────────────────
-            winObj->obj->set("GetBatteryStatus", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("GetBatteryStatus", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                       {
                 SYSTEM_POWER_STATUS ps; GetSystemPowerStatus(&ps);
                 auto obj = nova_obj();
                 obj->obj->set("acStatus",     nova_num((double)ps.ACLineStatus));
@@ -15567,11 +15578,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("lifePercent",  nova_num((double)ps.BatteryLifePercent));
                 obj->obj->set("lifeTime",     nova_num((double)ps.BatteryLifeTime));
                 obj->obj->set("fullLifeTime", nova_num((double)ps.BatteryFullLifeTime));
-                return obj;
-            }, "GetBatteryStatus"));
+                return obj; }, "GetBatteryStatus"));
 
             // ── Mutex / named synchronization ─────────────────────────────────
-            winObj->obj->set("CreateMutex", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("CreateMutex", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 std::string name = a.empty() ? "" : a[0].asString();
                 BOOL initialOwner = a.size() > 1 ? (BOOL)a[1].asBool() : FALSE;
                 HANDLE h = CreateMutexA(nullptr, initialOwner, name.empty() ? nullptr : name.c_str());
@@ -15589,11 +15600,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("close",    NovaValue::makeNative([hShared](ValVec, auto) -> Val {
                     return nova_bool(CloseHandle(*hShared) != 0);
                 }, "close"));
-                return obj;
-            }, "CreateMutex"));
+                return obj; }, "CreateMutex"));
 
             // ── Pipe (anonymous) ──────────────────────────────────────────────
-            winObj->obj->set("CreatePipe", NovaValue::makeNative([](ValVec, auto) -> Val {
+            winObj->obj->set("CreatePipe", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                 {
                 HANDLE r, w;
                 if (!CreatePipe(&r, &w, nullptr, 0)) return nova_null();
                 auto obj = nova_obj();
@@ -15613,11 +15624,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 }, "write"));
                 obj->obj->set("closeRead",  NovaValue::makeNative([rh](ValVec, auto) -> Val { CloseHandle(*rh); return nova_null(); }, "closeRead"));
                 obj->obj->set("closeWrite", NovaValue::makeNative([wh](ValVec, auto) -> Val { CloseHandle(*wh); return nova_null(); }, "closeWrite"));
-                return obj;
-            }, "CreatePipe"));
+                return obj; }, "CreatePipe"));
 
             // ── Virtual memory ────────────────────────────────────────────────
-            winObj->obj->set("VirtualAlloc", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("VirtualAlloc", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                   {
                 SIZE_T sz    = a.empty() ? 4096 : (SIZE_T)a[0].asNumber();
                 DWORD  type  = a.size() > 1 ? (DWORD)a[1].asNumber() : MEM_COMMIT | MEM_RESERVE;
                 DWORD  prot  = a.size() > 2 ? (DWORD)a[2].asNumber() : PAGE_READWRITE;
@@ -15628,80 +15639,80 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 ptr->rawAddr = p; ptr->rawSize = sz;
                 std::ostringstream ss; ss << "0x" << std::hex << (uintptr_t)p; ptr->address = ss.str();
                 auto out = std::make_shared<NovaValue>(); out->kind = VK::Pointer; out->ptr = ptr;
-                return out;
-            }, "VirtualAlloc"));
+                return out; }, "VirtualAlloc"));
 
-            winObj->obj->set("VirtualFree", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("VirtualFree", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 if (a.empty() || !a[0].isPointer() || !a[0]->ptr || !a[0]->ptr->isRaw) return nova_bool(false);
-                return nova_bool(VirtualFree(a[0]->ptr->rawAddr, 0, MEM_RELEASE) != 0);
-            }, "VirtualFree"));
+                return nova_bool(VirtualFree(a[0]->ptr->rawAddr, 0, MEM_RELEASE) != 0); }, "VirtualFree"));
 
-            winObj->obj->set("VirtualProtect", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            winObj->obj->set("VirtualProtect", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                     {
                 if (a.size() < 3 || !a[0].isPointer() || !a[0]->ptr || !a[0]->ptr->isRaw) return nova_bool(false);
                 DWORD oldProt;
-                return nova_bool(VirtualProtect(a[0]->ptr->rawAddr, (SIZE_T)a[1].asNumber(), (DWORD)a[2].asNumber(), &oldProt) != 0);
-            }, "VirtualProtect"));
+                return nova_bool(VirtualProtect(a[0]->ptr->rawAddr, (SIZE_T)a[1].asNumber(), (DWORD)a[2].asNumber(), &oldProt) != 0); }, "VirtualProtect"));
 
             // PAGE_* constants
-            winObj->obj->set("PAGE_READONLY",          nova_num(PAGE_READONLY));
-            winObj->obj->set("PAGE_READWRITE",         nova_num(PAGE_READWRITE));
-            winObj->obj->set("PAGE_EXECUTE_READ",      nova_num(PAGE_EXECUTE_READ));
+            winObj->obj->set("PAGE_READONLY", nova_num(PAGE_READONLY));
+            winObj->obj->set("PAGE_READWRITE", nova_num(PAGE_READWRITE));
+            winObj->obj->set("PAGE_EXECUTE_READ", nova_num(PAGE_EXECUTE_READ));
             winObj->obj->set("PAGE_EXECUTE_READWRITE", nova_num(PAGE_EXECUTE_READWRITE));
-            winObj->obj->set("MEM_COMMIT",             nova_num(MEM_COMMIT));
-            winObj->obj->set("MEM_RESERVE",            nova_num(MEM_RESERVE));
+            winObj->obj->set("MEM_COMMIT", nova_num(MEM_COMMIT));
+            winObj->obj->set("MEM_RESERVE", nova_num(MEM_RESERVE));
 
             // ── Sound ─────────────────────────────────────────────────────────
             {
                 auto soundObj = nova_obj();
-                soundObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                soundObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     DWORD freq = a.size() > 0 ? (DWORD)a[0].asNumber() : 750;
                     DWORD ms   = a.size() > 1 ? (DWORD)a[1].asNumber() : 300;
-                    return nova_bool(::Beep(freq, ms) != 0);
-                }, "Beep"));
-                soundObj->obj->set("PlaySound", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(::Beep(freq, ms) != 0); }, "Beep"));
+                soundObj->obj->set("PlaySound", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                      {
                     if (a.empty()) { PlaySoundA(nullptr, nullptr, 0); return nova_bool(true); }
                     DWORD flags = a.size() > 1 ? (DWORD)a[1].asNumber() : (SND_FILENAME | SND_ASYNC);
-                    return nova_bool(PlaySoundA(a[0].asString().c_str(), nullptr, flags) != 0);
-                }, "PlaySound"));
+                    return nova_bool(PlaySoundA(a[0].asString().c_str(), nullptr, flags) != 0); }, "PlaySound"));
                 auto mciObj = nova_obj();
-                mciObj->obj->set("SendString", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                mciObj->obj->set("SendString", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                     {
                     if (a.empty()) return nova_str("");
                     char ret[512] = {};
                     MCIERROR err = mciSendStringA(a[0].asString().c_str(), ret, sizeof(ret) - 1, nullptr);
-                    return err == 0 ? nova_str(ret) : nova_null();
-                }, "SendString"));
+                    return err == 0 ? nova_str(ret) : nova_null(); }, "SendString"));
                 soundObj->obj->set("MCI", mciObj);
-                soundObj->obj->set("SND_SYNC",     nova_num(SND_SYNC));
-                soundObj->obj->set("SND_ASYNC",    nova_num(SND_ASYNC));
+                soundObj->obj->set("SND_SYNC", nova_num(SND_SYNC));
+                soundObj->obj->set("SND_ASYNC", nova_num(SND_ASYNC));
                 soundObj->obj->set("SND_FILENAME", nova_num(SND_FILENAME));
-                soundObj->obj->set("SND_LOOP",     nova_num(SND_LOOP));
-                soundObj->obj->set("SND_MEMORY",   nova_num(SND_MEMORY));
-                soundObj->obj->set("SND_NOSTOP",   nova_num(SND_NOSTOP));
-                soundObj->obj->set("SND_NOWAIT",   nova_num(SND_NOWAIT));
-                soundObj->obj->set("SND_PURGE",    nova_num(SND_PURGE));
+                soundObj->obj->set("SND_LOOP", nova_num(SND_LOOP));
+                soundObj->obj->set("SND_MEMORY", nova_num(SND_MEMORY));
+                soundObj->obj->set("SND_NOSTOP", nova_num(SND_NOSTOP));
+                soundObj->obj->set("SND_NOWAIT", nova_num(SND_NOWAIT));
+                soundObj->obj->set("SND_PURGE", nova_num(SND_PURGE));
                 winObj->obj->set("Sound", soundObj);
             }
 
             // ── Mouse ─────────────────────────────────────────────────────────
             {
                 auto mouseObj = nova_obj();
-                mouseObj->obj->set("GetPosition", NovaValue::makeNative([](ValVec, auto) -> Val {
+                mouseObj->obj->set("GetPosition", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                        {
                     POINT p; GetCursorPos(&p);
                     auto obj = nova_obj();
                     obj->obj->set("x", nova_num((double)p.x));
                     obj->obj->set("y", nova_num((double)p.y));
-                    return obj;
-                }, "GetPosition"));
-                mouseObj->obj->set("SetPosition", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return obj; }, "GetPosition"));
+                mouseObj->obj->set("SetPosition", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                        {
                     int x = a.size() > 0 ? (int)a[0].asNumber() : 0;
                     int y = a.size() > 1 ? (int)a[1].asNumber() : 0;
-                    return nova_bool(SetCursorPos(x, y) != 0);
-                }, "SetPosition"));
-                mouseObj->obj->set("ShowCursor", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(SetCursorPos(x, y) != 0); }, "SetPosition"));
+                mouseObj->obj->set("ShowCursor", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     BOOL show = a.empty() ? TRUE : (a[0].asBool() ? TRUE : FALSE);
-                    return nova_num((double)::ShowCursor(show));
-                }, "ShowCursor"));
-                mouseObj->obj->set("ClipCursor", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_num((double)::ShowCursor(show)); }, "ShowCursor"));
+                mouseObj->obj->set("ClipCursor", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     if (a.empty() || a[0].isNull()) return nova_bool(::ClipCursor(nullptr) != 0);
                     if (a[0].isObject()) {
                         RECT r;
@@ -15715,104 +15726,103 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                         r.bottom = bottom ? (LONG)bottom->nval : 1080;
                         return nova_bool(::ClipCursor(&r) != 0);
                     }
-                    return nova_bool(false);
-                }, "ClipCursor"));
-                mouseObj->obj->set("BlockInput", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(false); }, "ClipCursor"));
+                mouseObj->obj->set("BlockInput", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     BOOL block = a.empty() ? TRUE : (a[0].asBool() ? TRUE : FALSE);
-                    return nova_bool(BlockInput(block) != 0);
-                }, "BlockInput"));
+                    return nova_bool(BlockInput(block) != 0); }, "BlockInput"));
                 winObj->obj->set("Mouse", mouseObj);
             }
 
             // ── Keyboard ──────────────────────────────────────────────────────
             {
                 auto kbObj = nova_obj();
-                kbObj->obj->set("GetAsyncKeyState", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                kbObj->obj->set("GetAsyncKeyState", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                          {
                     int vk = a.empty() ? 0 : (int)a[0].asNumber();
                     SHORT s = GetAsyncKeyState(vk);
                     auto obj = nova_obj();
                     obj->obj->set("pressed",  nova_bool((s & 0x8000) != 0));
                     obj->obj->set("toggled",  nova_bool((s & 0x0001) != 0));
                     obj->obj->set("raw",      nova_num((double)(uint16_t)s));
-                    return obj;
-                }, "GetAsyncKeyState"));
-                kbObj->obj->set("GetKeyboardState", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return obj; }, "GetAsyncKeyState"));
+                kbObj->obj->set("GetKeyboardState", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                          {
                     BYTE keys[256];
                     if (!GetKeyboardState(keys)) return nova_null();
                     ValVec arr;
                     for (int i = 0; i < 256; i++) arr.push_back(nova_num((double)keys[i]));
-                    return nova_arr(arr);
-                }, "GetKeyboardState"));
-                kbObj->obj->set("RegisterHotKey", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_arr(arr); }, "GetKeyboardState"));
+                kbObj->obj->set("RegisterHotKey", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                        {
                     int  id  = a.size() > 0 ? (int)a[0].asNumber()  : 1;
                     UINT mod = a.size() > 1 ? (UINT)a[1].asNumber() : 0;
                     UINT vk  = a.size() > 2 ? (UINT)a[2].asNumber() : 0;
-                    return nova_bool(RegisterHotKey(nullptr, id, mod, vk) != 0);
-                }, "RegisterHotKey"));
-                kbObj->obj->set("UnregisterHotKey", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(RegisterHotKey(nullptr, id, mod, vk) != 0); }, "RegisterHotKey"));
+                kbObj->obj->set("UnregisterHotKey", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                          {
                     int id = a.empty() ? 1 : (int)a[0].asNumber();
-                    return nova_bool(UnregisterHotKey(nullptr, id) != 0);
-                }, "UnregisterHotKey"));
-                kbObj->obj->set("MOD_ALT",     nova_num(MOD_ALT));
+                    return nova_bool(UnregisterHotKey(nullptr, id) != 0); }, "UnregisterHotKey"));
+                kbObj->obj->set("MOD_ALT", nova_num(MOD_ALT));
                 kbObj->obj->set("MOD_CONTROL", nova_num(MOD_CONTROL));
-                kbObj->obj->set("MOD_SHIFT",   nova_num(MOD_SHIFT));
-                kbObj->obj->set("MOD_WIN",     nova_num(MOD_WIN));
-                kbObj->obj->set("VK_BACK",     nova_num(VK_BACK));
-                kbObj->obj->set("VK_TAB",      nova_num(VK_TAB));
-                kbObj->obj->set("VK_RETURN",   nova_num(VK_RETURN));
-                kbObj->obj->set("VK_SHIFT",    nova_num(VK_SHIFT));
-                kbObj->obj->set("VK_CONTROL",  nova_num(VK_CONTROL));
-                kbObj->obj->set("VK_MENU",     nova_num(VK_MENU));
-                kbObj->obj->set("VK_ESCAPE",   nova_num(VK_ESCAPE));
-                kbObj->obj->set("VK_SPACE",    nova_num(VK_SPACE));
-                kbObj->obj->set("VK_LEFT",     nova_num(VK_LEFT));
-                kbObj->obj->set("VK_UP",       nova_num(VK_UP));
-                kbObj->obj->set("VK_RIGHT",    nova_num(VK_RIGHT));
-                kbObj->obj->set("VK_DOWN",     nova_num(VK_DOWN));
-                kbObj->obj->set("VK_DELETE",   nova_num(VK_DELETE));
-                kbObj->obj->set("VK_INSERT",   nova_num(VK_INSERT));
-                kbObj->obj->set("VK_HOME",     nova_num(VK_HOME));
-                kbObj->obj->set("VK_END",      nova_num(VK_END));
-                kbObj->obj->set("VK_F1",       nova_num(VK_F1));
-                kbObj->obj->set("VK_F2",       nova_num(VK_F2));
-                kbObj->obj->set("VK_F4",       nova_num(VK_F4));
-                kbObj->obj->set("VK_F5",       nova_num(VK_F5));
-                kbObj->obj->set("VK_F12",      nova_num(VK_F12));
-                kbObj->obj->set("VK_LBUTTON",  nova_num(VK_LBUTTON));
-                kbObj->obj->set("VK_RBUTTON",  nova_num(VK_RBUTTON));
-                kbObj->obj->set("VK_MBUTTON",  nova_num(VK_MBUTTON));
+                kbObj->obj->set("MOD_SHIFT", nova_num(MOD_SHIFT));
+                kbObj->obj->set("MOD_WIN", nova_num(MOD_WIN));
+                kbObj->obj->set("VK_BACK", nova_num(VK_BACK));
+                kbObj->obj->set("VK_TAB", nova_num(VK_TAB));
+                kbObj->obj->set("VK_RETURN", nova_num(VK_RETURN));
+                kbObj->obj->set("VK_SHIFT", nova_num(VK_SHIFT));
+                kbObj->obj->set("VK_CONTROL", nova_num(VK_CONTROL));
+                kbObj->obj->set("VK_MENU", nova_num(VK_MENU));
+                kbObj->obj->set("VK_ESCAPE", nova_num(VK_ESCAPE));
+                kbObj->obj->set("VK_SPACE", nova_num(VK_SPACE));
+                kbObj->obj->set("VK_LEFT", nova_num(VK_LEFT));
+                kbObj->obj->set("VK_UP", nova_num(VK_UP));
+                kbObj->obj->set("VK_RIGHT", nova_num(VK_RIGHT));
+                kbObj->obj->set("VK_DOWN", nova_num(VK_DOWN));
+                kbObj->obj->set("VK_DELETE", nova_num(VK_DELETE));
+                kbObj->obj->set("VK_INSERT", nova_num(VK_INSERT));
+                kbObj->obj->set("VK_HOME", nova_num(VK_HOME));
+                kbObj->obj->set("VK_END", nova_num(VK_END));
+                kbObj->obj->set("VK_F1", nova_num(VK_F1));
+                kbObj->obj->set("VK_F2", nova_num(VK_F2));
+                kbObj->obj->set("VK_F4", nova_num(VK_F4));
+                kbObj->obj->set("VK_F5", nova_num(VK_F5));
+                kbObj->obj->set("VK_F12", nova_num(VK_F12));
+                kbObj->obj->set("VK_LBUTTON", nova_num(VK_LBUTTON));
+                kbObj->obj->set("VK_RBUTTON", nova_num(VK_RBUTTON));
+                kbObj->obj->set("VK_MBUTTON", nova_num(VK_MBUTTON));
                 winObj->obj->set("Keyboard", kbObj);
             }
 
             // ── Clipboard ─────────────────────────────────────────────────────
             {
                 auto cbObj = nova_obj();
-                cbObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                cbObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                              {
                     HWND owner = a.empty() ? nullptr : (HWND)(uintptr_t)(size_t)a[0].asNumber();
-                    return nova_bool(OpenClipboard(owner) != 0);
-                }, "Open"));
-                cbObj->obj->set("Close", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    return nova_bool(CloseClipboard() != 0);
-                }, "Close"));
-                cbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return nova_bool(OpenClipboard(owner) != 0); }, "Open"));
+                cbObj->obj->set("Close", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_bool(CloseClipboard() != 0); }, "Close"));
+                cbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                 {
                     if (!OpenClipboard(nullptr)) return nova_null();
                     HANDLE h = GetClipboardData(CF_TEXT);
                     if (!h) { CloseClipboard(); return nova_null(); }
                     char *p = (char *)GlobalLock(h);
                     std::string s = p ? p : "";
                     GlobalUnlock(h); CloseClipboard();
-                    return nova_str(s);
-                }, "GetText"));
-                cbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_str(s); }, "GetText"));
+                cbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.empty() || !OpenClipboard(nullptr)) return nova_bool(false);
                     std::string s = a[0].asString(); EmptyClipboard();
                     HGLOBAL h = GlobalAlloc(GMEM_MOVEABLE, s.size() + 1);
                     if (!h) { CloseClipboard(); return nova_bool(false); }
                     memcpy(GlobalLock(h), s.c_str(), s.size() + 1);
                     GlobalUnlock(h); SetClipboardData(CF_TEXT, h); CloseClipboard();
-                    return nova_bool(true);
-                }, "SetText"));
-                cbObj->obj->set("GetData", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(true); }, "SetText"));
+                cbObj->obj->set("GetData", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     UINT fmt = a.empty() ? CF_TEXT : (UINT)a[0].asNumber();
                     if (!OpenClipboard(nullptr)) return nova_null();
                     HANDLE h = GetClipboardData(fmt);
@@ -15821,9 +15831,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     void *p = GlobalLock(h);
                     std::string out((char *)p, sz);
                     GlobalUnlock(h); CloseClipboard();
-                    return nova_str(out);
-                }, "GetData"));
-                cbObj->obj->set("SetData", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_str(out); }, "GetData"));
+                cbObj->obj->set("SetData", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.size() < 2 || !OpenClipboard(nullptr)) return nova_bool(false);
                     UINT fmt = (UINT)a[0].asNumber(); std::string data = a[1].asString();
                     EmptyClipboard();
@@ -15831,44 +15841,42 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     if (!h) { CloseClipboard(); return nova_bool(false); }
                     memcpy(GlobalLock(h), data.data(), data.size());
                     GlobalUnlock(h); SetClipboardData(fmt, h); CloseClipboard();
-                    return nova_bool(true);
-                }, "SetData"));
-                cbObj->obj->set("Empty", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return nova_bool(true); }, "SetData"));
+                cbObj->obj->set("Empty", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               {
                     if (!OpenClipboard(nullptr)) return nova_bool(false);
-                    bool r = EmptyClipboard() != 0; CloseClipboard(); return nova_bool(r);
-                }, "Empty"));
-                cbObj->obj->set("IsAvailable", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    bool r = EmptyClipboard() != 0; CloseClipboard(); return nova_bool(r); }, "Empty"));
+                cbObj->obj->set("IsAvailable", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                     {
                     UINT fmt = a.empty() ? CF_TEXT : (UINT)a[0].asNumber();
-                    return nova_bool(IsClipboardFormatAvailable(fmt) != 0);
-                }, "IsAvailable"));
-                cbObj->obj->set("CF_TEXT",        nova_num(CF_TEXT));
+                    return nova_bool(IsClipboardFormatAvailable(fmt) != 0); }, "IsAvailable"));
+                cbObj->obj->set("CF_TEXT", nova_num(CF_TEXT));
                 cbObj->obj->set("CF_UNICODETEXT", nova_num(CF_UNICODETEXT));
-                cbObj->obj->set("CF_BITMAP",      nova_num(CF_BITMAP));
-                cbObj->obj->set("CF_DIB",         nova_num(CF_DIB));
-                cbObj->obj->set("CF_HDROP",       nova_num(CF_HDROP));
+                cbObj->obj->set("CF_BITMAP", nova_num(CF_BITMAP));
+                cbObj->obj->set("CF_DIB", nova_num(CF_DIB));
+                cbObj->obj->set("CF_HDROP", nova_num(CF_HDROP));
                 winObj->obj->set("Clipboard", cbObj);
             }
 
             // ── Console ───────────────────────────────────────────────────────
             {
                 auto conObj = nova_obj();
-                conObj->obj->set("Alloc", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    return nova_bool(AllocConsole() != 0);
-                }, "Alloc"));
-                conObj->obj->set("Free", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    return nova_bool(FreeConsole() != 0);
-                }, "Free"));
-                conObj->obj->set("SetTitle", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                conObj->obj->set("Alloc", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                { return nova_bool(AllocConsole() != 0); }, "Alloc"));
+                conObj->obj->set("Free", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_bool(FreeConsole() != 0); }, "Free"));
+                conObj->obj->set("SetTitle", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                   {
                     if (a.empty()) return nova_bool(false);
-                    return nova_bool(SetConsoleTitleA(a[0].asString().c_str()) != 0);
-                }, "SetTitle"));
-                conObj->obj->set("SetTextColor", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(SetConsoleTitleA(a[0].asString().c_str()) != 0); }, "SetTitle"));
+                conObj->obj->set("SetTextColor", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     WORD attr = a.empty() ? (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
                                           : (WORD)a[0].asNumber();
                     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-                    return nova_bool(SetConsoleTextAttribute(h, attr) != 0);
-                }, "SetTextColor"));
-                conObj->obj->set("GetSize", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return nova_bool(SetConsoleTextAttribute(h, attr) != 0); }, "SetTextColor"));
+                conObj->obj->set("GetSize", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                  {
                     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
                     CONSOLE_SCREEN_BUFFER_INFO info;
                     if (!GetConsoleScreenBufferInfo(h, &info)) return nova_null();
@@ -15877,28 +15885,27 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("height",  nova_num(info.dwSize.Y));
                     obj->obj->set("cursorX", nova_num(info.dwCursorPosition.X));
                     obj->obj->set("cursorY", nova_num(info.dwCursorPosition.Y));
-                    return obj;
-                }, "GetSize"));
-                conObj->obj->set("SetCursorPos", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return obj; }, "GetSize"));
+                conObj->obj->set("SetCursorPos", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
                     COORD c;
                     c.X = a.size() > 0 ? (SHORT)a[0].asNumber() : 0;
                     c.Y = a.size() > 1 ? (SHORT)a[1].asNumber() : 0;
-                    return nova_bool(SetConsoleCursorPosition(h, c) != 0);
-                }, "SetCursorPos"));
-                conObj->obj->set("FG_BLACK",   nova_num(0));
-                conObj->obj->set("FG_BLUE",    nova_num(FOREGROUND_BLUE));
-                conObj->obj->set("FG_GREEN",   nova_num(FOREGROUND_GREEN));
-                conObj->obj->set("FG_CYAN",    nova_num(FOREGROUND_BLUE | FOREGROUND_GREEN));
-                conObj->obj->set("FG_RED",     nova_num(FOREGROUND_RED));
+                    return nova_bool(SetConsoleCursorPosition(h, c) != 0); }, "SetCursorPos"));
+                conObj->obj->set("FG_BLACK", nova_num(0));
+                conObj->obj->set("FG_BLUE", nova_num(FOREGROUND_BLUE));
+                conObj->obj->set("FG_GREEN", nova_num(FOREGROUND_GREEN));
+                conObj->obj->set("FG_CYAN", nova_num(FOREGROUND_BLUE | FOREGROUND_GREEN));
+                conObj->obj->set("FG_RED", nova_num(FOREGROUND_RED));
                 conObj->obj->set("FG_MAGENTA", nova_num(FOREGROUND_RED | FOREGROUND_BLUE));
-                conObj->obj->set("FG_YELLOW",  nova_num(FOREGROUND_RED | FOREGROUND_GREEN));
-                conObj->obj->set("FG_WHITE",   nova_num(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE));
+                conObj->obj->set("FG_YELLOW", nova_num(FOREGROUND_RED | FOREGROUND_GREEN));
+                conObj->obj->set("FG_WHITE", nova_num(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE));
                 conObj->obj->set("FG_INTENSE", nova_num(FOREGROUND_INTENSITY));
-                conObj->obj->set("BG_BLUE",    nova_num(BACKGROUND_BLUE));
-                conObj->obj->set("BG_GREEN",   nova_num(BACKGROUND_GREEN));
-                conObj->obj->set("BG_RED",     nova_num(BACKGROUND_RED));
-                conObj->obj->set("BG_WHITE",   nova_num(BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
+                conObj->obj->set("BG_BLUE", nova_num(BACKGROUND_BLUE));
+                conObj->obj->set("BG_GREEN", nova_num(BACKGROUND_GREEN));
+                conObj->obj->set("BG_RED", nova_num(BACKGROUND_RED));
+                conObj->obj->set("BG_WHITE", nova_num(BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
                 conObj->obj->set("BG_INTENSE", nova_num(BACKGROUND_INTENSITY));
                 winObj->obj->set("Console", conObj);
             }
@@ -15906,14 +15913,20 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
             // ── Registry (structured sub-object) ──────────────────────────────
             {
                 auto rObj = nova_obj();
-                auto resolveHiveEx = [](const std::string &name) -> HKEY {
-                    if (name == "HKLM" || name == "HKEY_LOCAL_MACHINE") return HKEY_LOCAL_MACHINE;
-                    if (name == "HKCU" || name == "HKEY_CURRENT_USER")  return HKEY_CURRENT_USER;
-                    if (name == "HKCR" || name == "HKEY_CLASSES_ROOT")  return HKEY_CLASSES_ROOT;
-                    if (name == "HKU"  || name == "HKEY_USERS")         return HKEY_USERS;
+                auto resolveHiveEx = [](const std::string &name) -> HKEY
+                {
+                    if (name == "HKLM" || name == "HKEY_LOCAL_MACHINE")
+                        return HKEY_LOCAL_MACHINE;
+                    if (name == "HKCU" || name == "HKEY_CURRENT_USER")
+                        return HKEY_CURRENT_USER;
+                    if (name == "HKCR" || name == "HKEY_CLASSES_ROOT")
+                        return HKEY_CLASSES_ROOT;
+                    if (name == "HKU" || name == "HKEY_USERS")
+                        return HKEY_USERS;
                     return HKEY_CURRENT_USER;
                 };
-                rObj->obj->set("OpenKey", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val {
+                rObj->obj->set("OpenKey", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val
+                                                                {
                     if (a.size() < 2) return nova_null();
                     HKEY hive = resolveHiveEx(a[0].asString());
                     std::string acc = a.size() > 2 ? a[2].asString() : "read";
@@ -15947,9 +15960,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("Close", NovaValue::makeNative([hs](ValVec, auto) -> Val {
                         RegCloseKey(*hs); return nova_null();
                     }, "Close"));
-                    return obj;
-                }, "OpenKey"));
-                rObj->obj->set("QueryValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val {
+                    return obj; }, "OpenKey"));
+                rObj->obj->set("QueryValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val
+                                                                   {
                     if (a.size() < 3) return nova_null();
                     HKEY hive = resolveHiveEx(a[0].asString()); HKEY key;
                     if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_READ, &key) != ERROR_SUCCESS) return nova_null();
@@ -15959,58 +15972,57 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     if (st != ERROR_SUCCESS) return nova_null();
                     if (type == REG_SZ || type == REG_EXPAND_SZ) return nova_str(std::string(buf, sz > 0 ? sz - 1 : 0));
                     if (type == REG_DWORD) { DWORD d; memcpy(&d, buf, 4); return nova_num((double)d); }
-                    return nova_str(std::string(buf, sz));
-                }, "QueryValue"));
-                rObj->obj->set("SetValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val {
+                    return nova_str(std::string(buf, sz)); }, "QueryValue"));
+                rObj->obj->set("SetValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val
+                                                                 {
                     if (a.size() < 4) return nova_bool(false);
                     HKEY hive = resolveHiveEx(a[0].asString()); HKEY key;
                     if (RegCreateKeyExA(hive, a[1].asString().c_str(), 0, nullptr, 0, KEY_WRITE, nullptr, &key, nullptr) != ERROR_SUCCESS) return nova_bool(false);
                     LSTATUS st;
                     if (a[3].isNumber()) { DWORD d = (DWORD)a[3].asNumber(); st = RegSetValueExA(key, a[2].asString().c_str(), 0, REG_DWORD, (LPBYTE)&d, sizeof(d)); }
                     else { std::string v = a[3].asString(); st = RegSetValueExA(key, a[2].asString().c_str(), 0, REG_SZ, (LPBYTE)v.c_str(), (DWORD)(v.size()+1)); }
-                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS);
-                }, "SetValue"));
-                rObj->obj->set("DeleteKey", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val {
+                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS); }, "SetValue"));
+                rObj->obj->set("DeleteKey", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val
+                                                                  {
                     if (a.size() < 3) return nova_bool(false);
                     HKEY hive = resolveHiveEx(a[0].asString()); HKEY key;
                     if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_WRITE, &key) != ERROR_SUCCESS) return nova_bool(false);
                     LSTATUS st = RegDeleteKeyA(key, a[2].asString().c_str());
-                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS);
-                }, "DeleteKey"));
-                rObj->obj->set("DeleteValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val {
+                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS); }, "DeleteKey"));
+                rObj->obj->set("DeleteValue", NovaValue::makeNative([resolveHiveEx](ValVec a, auto) -> Val
+                                                                    {
                     if (a.size() < 3) return nova_bool(false);
                     HKEY hive = resolveHiveEx(a[0].asString()); HKEY key;
                     if (RegOpenKeyExA(hive, a[1].asString().c_str(), 0, KEY_WRITE, &key) != ERROR_SUCCESS) return nova_bool(false);
                     LSTATUS st = RegDeleteValueA(key, a[2].asString().c_str());
-                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS);
-                }, "DeleteValue"));
+                    RegCloseKey(key); return nova_bool(st == ERROR_SUCCESS); }, "DeleteValue"));
                 winObj->obj->set("Registry", rObj);
             }
 
             // ── System (structured sub-object) ────────────────────────────────
             {
                 auto sysObj = nova_obj();
-                sysObj->obj->set("Sleep", NovaValue::makeNative([](ValVec a, auto) -> Val {
-                    ::Sleep(a.empty() ? 0 : (DWORD)a[0].asNumber()); return nova_null();
-                }, "Sleep"));
-                sysObj->obj->set("GetTickCount", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    return nova_num((double)GetTickCount64());
-                }, "GetTickCount"));
-                sysObj->obj->set("QueryPerformanceCounter", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    LARGE_INTEGER li; QueryPerformanceCounter(&li); return nova_num((double)li.QuadPart);
-                }, "QueryPerformanceCounter"));
-                sysObj->obj->set("QueryPerformanceFrequency", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    LARGE_INTEGER li; QueryPerformanceFrequency(&li); return nova_num((double)li.QuadPart);
-                }, "QueryPerformanceFrequency"));
-                sysObj->obj->set("GetComputerName", NovaValue::makeNative([](ValVec, auto) -> Val {
+                sysObj->obj->set("Sleep", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                {
+                    ::Sleep(a.empty() ? 0 : (DWORD)a[0].asNumber()); return nova_null(); }, "Sleep"));
+                sysObj->obj->set("GetTickCount", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                       { return nova_num((double)GetTickCount64()); }, "GetTickCount"));
+                sysObj->obj->set("QueryPerformanceCounter", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                                  {
+                    LARGE_INTEGER li; QueryPerformanceCounter(&li); return nova_num((double)li.QuadPart); }, "QueryPerformanceCounter"));
+                sysObj->obj->set("QueryPerformanceFrequency", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                                    {
+                    LARGE_INTEGER li; QueryPerformanceFrequency(&li); return nova_num((double)li.QuadPart); }, "QueryPerformanceFrequency"));
+                sysObj->obj->set("GetComputerName", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                          {
                     char buf[MAX_COMPUTERNAME_LENGTH + 1] = {}; DWORD sz = sizeof(buf);
-                    GetComputerNameA(buf, &sz); return nova_str(buf);
-                }, "GetComputerName"));
-                sysObj->obj->set("GetUserName", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    GetComputerNameA(buf, &sz); return nova_str(buf); }, "GetComputerName"));
+                sysObj->obj->set("GetUserName", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                      {
                     char buf[256] = {}; DWORD sz = sizeof(buf);
-                    GetUserNameA(buf, &sz); return nova_str(buf);
-                }, "GetUserName"));
-                sysObj->obj->set("GetNativeSystemInfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    GetUserNameA(buf, &sz); return nova_str(buf); }, "GetUserName"));
+                sysObj->obj->set("GetNativeSystemInfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                              {
                     SYSTEM_INFO si; GetNativeSystemInfo(&si);
                     auto obj = nova_obj();
                     obj->obj->set("processorCount",        nova_num((double)si.dwNumberOfProcessors));
@@ -16020,27 +16032,26 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("allocationGranularity", nova_num((double)si.dwAllocationGranularity));
                     obj->obj->set("processorLevel",        nova_num((double)si.wProcessorLevel));
                     obj->obj->set("processorRevision",     nova_num((double)si.wProcessorRevision));
-                    return obj;
-                }, "GetNativeSystemInfo"));
-                sysObj->obj->set("GetSystemMetrics", NovaValue::makeNative([](ValVec a, auto) -> Val {
-                    return nova_num((double)GetSystemMetrics(a.empty() ? SM_CXSCREEN : (int)a[0].asNumber()));
-                }, "GetSystemMetrics"));
-                sysObj->obj->set("SM_CXSCREEN",        nova_num(SM_CXSCREEN));
-                sysObj->obj->set("SM_CYSCREEN",        nova_num(SM_CYSCREEN));
-                sysObj->obj->set("SM_CXFULLSCREEN",    nova_num(SM_CXFULLSCREEN));
-                sysObj->obj->set("SM_CYFULLSCREEN",    nova_num(SM_CYFULLSCREEN));
-                sysObj->obj->set("SM_CMONITORS",       nova_num(SM_CMONITORS));
+                    return obj; }, "GetNativeSystemInfo"));
+                sysObj->obj->set("GetSystemMetrics", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                           { return nova_num((double)GetSystemMetrics(a.empty() ? SM_CXSCREEN : (int)a[0].asNumber())); }, "GetSystemMetrics"));
+                sysObj->obj->set("SM_CXSCREEN", nova_num(SM_CXSCREEN));
+                sysObj->obj->set("SM_CYSCREEN", nova_num(SM_CYSCREEN));
+                sysObj->obj->set("SM_CXFULLSCREEN", nova_num(SM_CXFULLSCREEN));
+                sysObj->obj->set("SM_CYFULLSCREEN", nova_num(SM_CYFULLSCREEN));
+                sysObj->obj->set("SM_CMONITORS", nova_num(SM_CMONITORS));
                 sysObj->obj->set("SM_CXVIRTUALSCREEN", nova_num(SM_CXVIRTUALSCREEN));
                 sysObj->obj->set("SM_CYVIRTUALSCREEN", nova_num(SM_CYVIRTUALSCREEN));
-                sysObj->obj->set("GetLastInputInfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+                sysObj->obj->set("GetLastInputInfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                           {
                     LASTINPUTINFO lii; lii.cbSize = sizeof(lii);
                     if (!GetLastInputInfo(&lii)) return nova_null();
                     auto obj = nova_obj();
                     obj->obj->set("dwTime", nova_num((double)lii.dwTime));
                     obj->obj->set("idleMs", nova_num((double)(GetTickCount64() - lii.dwTime)));
-                    return obj;
-                }, "GetLastInputInfo"));
-                sysObj->obj->set("EnumDisplayMonitors", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return obj; }, "GetLastInputInfo"));
+                sysObj->obj->set("EnumDisplayMonitors", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                              {
                     struct MonCtx { ValVec arr; };
                     auto ctx = std::make_shared<MonCtx>();
                     ::EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hm, HDC, LPRECT rc, LPARAM lp) -> BOOL {
@@ -16054,9 +16065,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                         obj->obj->set("primary", nova_bool((mi.dwFlags & MONITORINFOF_PRIMARY) != 0));
                         mc->arr.push_back(obj); return TRUE;
                     }, (LPARAM)ctx.get());
-                    return nova_arr(ctx->arr);
-                }, "EnumDisplayMonitors"));
-                sysObj->obj->set("ChangeDisplaySettings", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_arr(ctx->arr); }, "EnumDisplayMonitors"));
+                sysObj->obj->set("ChangeDisplaySettings", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                                {
                     DEVMODEA dm; ZeroMemory(&dm, sizeof(dm)); dm.dmSize = sizeof(dm);
                     EnumDisplaySettingsA(nullptr, ENUM_CURRENT_SETTINGS, &dm);
                     if (a.size() > 0) dm.dmPelsWidth        = (DWORD)a[0].asNumber();
@@ -16064,75 +16075,74 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     if (a.size() > 2) dm.dmBitsPerPel       = (DWORD)a[2].asNumber();
                     if (a.size() > 3) dm.dmDisplayFrequency = (DWORD)a[3].asNumber();
                     dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
-                    return nova_bool(ChangeDisplaySettingsA(&dm, 0) == DISP_CHANGE_SUCCESSFUL);
-                }, "ChangeDisplaySettings"));
-                sysObj->obj->set("SetWallpaper", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(ChangeDisplaySettingsA(&dm, 0) == DISP_CHANGE_SUCCESSFUL); }, "ChangeDisplaySettings"));
+                sysObj->obj->set("SetWallpaper", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                       {
                     if (a.empty()) return nova_bool(false);
                     std::string path = a[0].asString();
                     return nova_bool(SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0,
-                        (PVOID)path.c_str(), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE) != 0);
-                }, "SetWallpaper"));
-                sysObj->obj->set("GetVersion", NovaValue::makeNative([](ValVec, auto) -> Val {
+                        (PVOID)path.c_str(), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE) != 0); }, "SetWallpaper"));
+                sysObj->obj->set("GetVersion", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                     {
                     OSVERSIONINFOEXA osi; ZeroMemory(&osi, sizeof(osi)); osi.dwOSVersionInfoSize = sizeof(osi);
-                    #pragma warning(suppress: 4996)
+#pragma warning(suppress : 4996)
                     GetVersionExA((LPOSVERSIONINFOA)&osi);
                     auto obj = nova_obj();
                     obj->obj->set("major",       nova_num((double)osi.dwMajorVersion));
                     obj->obj->set("minor",       nova_num((double)osi.dwMinorVersion));
                     obj->obj->set("build",       nova_num((double)osi.dwBuildNumber));
                     obj->obj->set("servicePack", nova_str(osi.szCSDVersion));
-                    return obj;
-                }, "GetVersion"));
+                    return obj; }, "GetVersion"));
                 winObj->obj->set("System", sysObj);
             }
 
             // ── Power ─────────────────────────────────────────────────────────
             {
                 auto pwrObj = nova_obj();
-                pwrObj->obj->set("LockWorkStation", NovaValue::makeNative([](ValVec, auto) -> Val {
-                    return nova_bool(LockWorkStation() != 0);
-                }, "LockWorkStation"));
-                pwrObj->obj->set("ExitWindows", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                pwrObj->obj->set("LockWorkStation", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                          { return nova_bool(LockWorkStation() != 0); }, "LockWorkStation"));
+                pwrObj->obj->set("ExitWindows", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                      {
                     UINT flags = a.empty() ? EWX_LOGOFF : (UINT)a[0].asNumber();
                     HANDLE tok; LUID luid; TOKEN_PRIVILEGES tp;
                     if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
-                        LookupPrivilegeValueA(nullptr, SE_SHUTDOWN_NAME, &luid);
+                        LookupPrivilegeValueA(nullptr, "SeShutdownPrivilege", &luid);
                         tp.PrivilegeCount = 1; tp.Privileges[0].Luid = luid;
                         tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
                         AdjustTokenPrivileges(tok, FALSE, &tp, 0, nullptr, nullptr);
                         CloseHandle(tok);
                     }
-                    return nova_bool(ExitWindowsEx(flags, SHTDN_REASON_MINOR_OTHER) != 0);
-                }, "ExitWindows"));
-                pwrObj->obj->set("SetThreadExecutionState", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(ExitWindowsEx(flags, SHTDN_REASON_MINOR_OTHER) != 0); }, "ExitWindows"));
+                pwrObj->obj->set("SetThreadExecutionState", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                                  {
                     EXECUTION_STATE flags = a.empty() ? ES_CONTINUOUS : (EXECUTION_STATE)(DWORD)a[0].asNumber();
-                    return nova_num((double)SetThreadExecutionState(flags));
-                }, "SetThreadExecutionState"));
-                pwrObj->obj->set("EWX_LOGOFF",          nova_num(EWX_LOGOFF));
-                pwrObj->obj->set("EWX_SHUTDOWN",        nova_num(EWX_SHUTDOWN));
-                pwrObj->obj->set("EWX_REBOOT",          nova_num(EWX_REBOOT));
-                pwrObj->obj->set("EWX_POWEROFF",        nova_num(EWX_POWEROFF));
-                pwrObj->obj->set("EWX_FORCE",           nova_num(EWX_FORCE));
-                pwrObj->obj->set("ES_CONTINUOUS",       nova_num(ES_CONTINUOUS));
+                    return nova_num((double)SetThreadExecutionState(flags)); }, "SetThreadExecutionState"));
+                pwrObj->obj->set("EWX_LOGOFF", nova_num(EWX_LOGOFF));
+                pwrObj->obj->set("EWX_SHUTDOWN", nova_num(EWX_SHUTDOWN));
+                pwrObj->obj->set("EWX_REBOOT", nova_num(EWX_REBOOT));
+                pwrObj->obj->set("EWX_POWEROFF", nova_num(EWX_POWEROFF));
+                pwrObj->obj->set("EWX_FORCE", nova_num(EWX_FORCE));
+                pwrObj->obj->set("ES_CONTINUOUS", nova_num(ES_CONTINUOUS));
                 pwrObj->obj->set("ES_DISPLAY_REQUIRED", nova_num(ES_DISPLAY_REQUIRED));
-                pwrObj->obj->set("ES_SYSTEM_REQUIRED",  nova_num(ES_SYSTEM_REQUIRED));
-                pwrObj->obj->set("ES_AWAYMODE_REQUIRED",nova_num(ES_AWAYMODE_REQUIRED));
+                pwrObj->obj->set("ES_SYSTEM_REQUIRED", nova_num(ES_SYSTEM_REQUIRED));
+                pwrObj->obj->set("ES_AWAYMODE_REQUIRED", nova_num(ES_AWAYMODE_REQUIRED));
                 winObj->obj->set("Power", pwrObj);
             }
 
             // ── Shell (structured sub-object) ─────────────────────────────────
             {
                 auto shObj = nova_obj();
-                shObj->obj->set("Execute", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                shObj->obj->set("Execute", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.empty()) return nova_bool(false);
                     std::string file = a[0].asString();
                     std::string op   = a.size() > 1 ? a[1].asString() : "open";
                     std::string args = a.size() > 2 ? a[2].asString() : "";
                     HINSTANCE r = ShellExecuteA(nullptr, op.c_str(), file.c_str(),
                         args.empty() ? nullptr : args.c_str(), nullptr, SW_SHOWNORMAL);
-                    return nova_bool((intptr_t)r > 32);
-                }, "Execute"));
-                shObj->obj->set("GetKnownFolderPath", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool((intptr_t)r > 32); }, "Execute"));
+                shObj->obj->set("GetKnownFolderPath", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                            {
                     auto nameToCSIDL = [](const std::string &n) -> int {
                         if (n == "Desktop")      return CSIDL_DESKTOP;
                         if (n == "Documents")    return CSIDL_PERSONAL;
@@ -16151,20 +16161,20 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     int csidl = a.empty() ? CSIDL_PERSONAL : nameToCSIDL(a[0].asString());
                     char path[MAX_PATH] = {};
                     SHGetSpecialFolderPathA(nullptr, path, csidl, FALSE);
-                    return nova_str(path);
-                }, "GetKnownFolderPath"));
-                shObj->obj->set("OpenURL", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_str(path); }, "GetKnownFolderPath"));
+                shObj->obj->set("OpenURL", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.empty()) return nova_bool(false);
                     HINSTANCE r = ShellExecuteA(nullptr, "open", a[0].asString().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-                    return nova_bool((intptr_t)r > 32);
-                }, "OpenURL"));
+                    return nova_bool((intptr_t)r > 32); }, "OpenURL"));
                 winObj->obj->set("Shell", shObj);
             }
 
             // ── Graphics ──────────────────────────────────────────────────────
             {
                 auto gfxObj = nova_obj();
-                gfxObj->obj->set("CaptureScreen", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                gfxObj->obj->set("CaptureScreen", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                        {
                     int x = a.size() > 0 ? (int)a[0].asNumber() : 0;
                     int y = a.size() > 1 ? (int)a[1].asNumber() : 0;
                     int w = a.size() > 2 ? (int)a[2].asNumber() : GetSystemMetrics(SM_CXSCREEN);
@@ -16186,9 +16196,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("height", nova_num((double)h));
                     obj->obj->set("pixels", nova_str(std::string((char *)pixels.data(), pixels.size())));
                     obj->obj->set("bpp",    nova_num(32));
-                    return obj;
-                }, "CaptureScreen"));
-                gfxObj->obj->set("CreateCompatibleBitmap", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return obj; }, "CaptureScreen"));
+                gfxObj->obj->set("CreateCompatibleBitmap", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                                 {
                     int w = a.size() > 0 ? (int)a[0].asNumber() : 100;
                     int h = a.size() > 1 ? (int)a[1].asNumber() : 100;
                     HDC dc = GetDC(nullptr);
@@ -16203,9 +16213,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("delete", NovaValue::makeNative([bs](ValVec, auto) -> Val {
                         if (*bs) { DeleteObject(*bs); *bs = nullptr; } return nova_null();
                     }, "delete"));
-                    return obj;
-                }, "CreateCompatibleBitmap"));
-                gfxObj->obj->set("BitBlt", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return obj; }, "CreateCompatibleBitmap"));
+                gfxObj->obj->set("BitBlt", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.size() < 5) return nova_bool(false);
                     HDC  dst = (HDC)(uintptr_t)(size_t)a[0].asNumber();
                     int  dx  = (int)a[1].asNumber(), dy = (int)a[2].asNumber();
@@ -16214,9 +16224,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     int  sx  = a.size() > 6 ? (int)a[6].asNumber() : 0;
                     int  sy  = a.size() > 7 ? (int)a[7].asNumber() : 0;
                     DWORD rop = a.size() > 8 ? (DWORD)a[8].asNumber() : SRCCOPY;
-                    return nova_bool(::BitBlt(dst, dx, dy, w, h, src, sx, sy, rop) != 0);
-                }, "BitBlt"));
-                gfxObj->obj->set("GetDIBits", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_bool(::BitBlt(dst, dx, dy, w, h, src, sx, sy, rop) != 0); }, "BitBlt"));
+                gfxObj->obj->set("GetDIBits", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                    {
                     if (a.empty()) return nova_null();
                     HBITMAP bmp = (HBITMAP)(uintptr_t)(size_t)a[0].asNumber();
                     int w = a.size() > 1 ? (int)a[1].asNumber() : 0;
@@ -16233,12 +16243,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     obj->obj->set("width",  nova_num((double)w));
                     obj->obj->set("height", nova_num((double)h));
                     obj->obj->set("pixels", nova_str(std::string((char *)pixels.data(), pixels.size())));
-                    return obj;
-                }, "GetDIBits"));
-                gfxObj->obj->set("SRCCOPY",   nova_num(SRCCOPY));
-                gfxObj->obj->set("SRCAND",    nova_num(SRCAND));
+                    return obj; }, "GetDIBits"));
+                gfxObj->obj->set("SRCCOPY", nova_num(SRCCOPY));
+                gfxObj->obj->set("SRCAND", nova_num(SRCAND));
                 gfxObj->obj->set("SRCINVERT", nova_num(SRCINVERT));
-                gfxObj->obj->set("SRCPAINT",  nova_num(SRCPAINT));
+                gfxObj->obj->set("SRCPAINT", nova_num(SRCPAINT));
                 gfxObj->obj->set("BLACKNESS", nova_num(BLACKNESS));
                 gfxObj->obj->set("WHITENESS", nova_num(WHITENESS));
                 winObj->obj->set("Graphics", gfxObj);
@@ -16247,34 +16256,35 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
             // ── Resources ─────────────────────────────────────────────────────
             {
                 auto resObj = nova_obj();
-                resObj->obj->set("Find", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                resObj->obj->set("Find", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                     HMODULE mod = a.size() > 0 && a[0].isNumber() ? (HMODULE)(uintptr_t)(size_t)a[0].asNumber() : GetModuleHandleA(nullptr);
                     std::string name = a.size() > 1 ? a[1].asString() : "";
                     std::string type = a.size() > 2 ? a[2].asString() : "RT_RCDATA";
-                    LPCTSTR resType = RT_RCDATA;
-                    if (type == "RT_STRING")   resType = RT_STRING;
-                    if (type == "RT_BITMAP")   resType = RT_BITMAP;
-                    if (type == "RT_ICON")     resType = RT_ICON;
-                    if (type == "RT_MANIFEST") resType = RT_MANIFEST;
-                    HRSRC h = FindResourceA(mod, name.c_str(), resType);
-                    return h ? nova_num((double)(uintptr_t)h) : nova_null();
-                }, "Find"));
-                resObj->obj->set("Load", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    LPCSTR resType = MAKEINTRESOURCEA(10); // RT_RCDATA
+if (type == "RT_STRING")   resType = MAKEINTRESOURCEA(6);
+if (type == "RT_BITMAP")   resType = MAKEINTRESOURCEA(2);
+if (type == "RT_ICON")     resType = MAKEINTRESOURCEA(3);
+if (type == "RT_MANIFEST") resType = MAKEINTRESOURCEA(24);
+HRSRC h = FindResourceA(mod, name.c_str(), resType);
+                    return h ? nova_num((double)(uintptr_t)h) : nova_null(); }, "Find"));
+                resObj->obj->set("Load", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                     if (a.size() < 2) return nova_null();
                     HMODULE mod  = a[0].isNumber() ? (HMODULE)(uintptr_t)(size_t)a[0].asNumber() : GetModuleHandleA(nullptr);
                     HRSRC   hres = (HRSRC)(uintptr_t)(size_t)a[1].asNumber();
                     HGLOBAL h = LoadResource(mod, hres);
-                    return h ? nova_num((double)(uintptr_t)h) : nova_null();
-                }, "Load"));
-                resObj->obj->set("Lock", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return h ? nova_num((double)(uintptr_t)h) : nova_null(); }, "Load"));
+                resObj->obj->set("Lock", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                     if (a.empty()) return nova_null();
                     HGLOBAL h = (HGLOBAL)(uintptr_t)(size_t)a[0].asNumber();
                     DWORD   sz = a.size() > 1 ? (DWORD)a[1].asNumber() : 0;
                     void   *p  = LockResource(h);
                     if (!p) return nova_null();
-                    return nova_str(std::string((char *)p, sz));
-                }, "Lock"));
-                resObj->obj->set("Update", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                    return nova_str(std::string((char *)p, sz)); }, "Lock"));
+                resObj->obj->set("Update", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                     if (a.size() < 4) return nova_bool(false);
                     std::string path = a[0].asString(), type = a[1].asString();
                     std::string name = a[2].asString(), data = a[3].asString();
@@ -16284,15 +16294,15 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                         MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
                         (LPVOID)data.data(), (DWORD)data.size());
                     EndUpdateResourceA(h, !r);
-                    return nova_bool(r != 0);
-                }, "Update"));
+                    return nova_bool(r != 0); }, "Update"));
                 winObj->obj->set("Resources", resObj);
             }
 
             // ── Device ────────────────────────────────────────────────────────
             {
                 auto devObj = nova_obj();
-                devObj->obj->set("RegisterDeviceNotification", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                devObj->obj->set("RegisterDeviceNotification", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                                     {
                     HWND hwnd = a.size() > 0 ? (HWND)(uintptr_t)(size_t)a[0].asNumber() : nullptr;
                     DEV_BROADCAST_DEVICEINTERFACE dbd;
                     ZeroMemory(&dbd, sizeof(dbd));
@@ -16301,9 +16311,9 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     dbd.dbcc_classguid  = GUID_NULL;
                     HDEVNOTIFY h = ::RegisterDeviceNotificationA(hwnd, &dbd,
                         DEVICE_NOTIFY_WINDOW_HANDLE | DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
-                    return h ? nova_num((double)(uintptr_t)h) : nova_null();
-                }, "RegisterDeviceNotification"));
-                devObj->obj->set("EnumDevices", NovaValue::makeNative([](ValVec, auto) -> Val {
+                    return h ? nova_num((double)(uintptr_t)h) : nova_null(); }, "RegisterDeviceNotification"));
+                devObj->obj->set("EnumDevices", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                      {
                     ValVec arr;
                     HKEY enumKey;
                     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
@@ -16344,8 +16354,7 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                         RegCloseKey(busKey);
                     }
                     RegCloseKey(enumKey);
-                    return nova_arr(arr);
-                }, "EnumDevices"));
+                    return nova_arr(arr); }, "EnumDevices"));
                 winObj->obj->set("Device", devObj);
             }
 
@@ -16362,7 +16371,8 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
 
             // ── Beep (AudioToolbox sine wave) ─────────────────────────────────
             // Std.Apple.Beep(freq, ms)
-            appleObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            appleObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 int freq = a.size() > 0 ? (int)a[0].asNumber() : 750;
                 int ms   = a.size() > 1 ? (int)a[1].asNumber() : 300;
                 // Synthesise a sine wave and play it via AudioQueue
@@ -16408,17 +16418,17 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 AudioQueueStart(queue, nullptr);
                 usleep((ms + 50) * 1000);
                 AudioQueueDispose(queue, true);
-                return nova_bool(true);
-            }, "Beep"));
+                return nova_bool(true); }, "Beep"));
 
             // ── NSBeep (system alert sound) ────────────────────────────────────
-            appleObj->obj->set("SystemBeep", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("SystemBeep", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 std::system("afplay /System/Library/Sounds/Ping.aiff &");
-                return nova_null();
-            }, "SystemBeep"));
+                return nova_null(); }, "SystemBeep"));
 
             // ── Notification (macOS notification center via osascript) ─────────
-            appleObj->obj->set("Notify", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            appleObj->obj->set("Notify", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                 std::string title   = a.size() > 0 ? a[0].asString() : "Nova";
                 std::string message = a.size() > 1 ? a[1].asString() : "";
                 std::string subtitle= a.size() > 2 ? a[2].asString() : "";
@@ -16427,11 +16437,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 if (!subtitle.empty()) cmd += " subtitle \"" + subtitle + "\"";
                 cmd += "' &";
                 std::system(cmd.c_str());
-                return nova_null();
-            }, "Notify"));
+                return nova_null(); }, "Notify"));
 
             // ── SpeakText (text-to-speech via say) ────────────────────────────
-            appleObj->obj->set("Speak", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            appleObj->obj->set("Speak", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                              {
                 if (a.empty()) return nova_null();
                 std::string text  = a[0].asString();
                 std::string voice = a.size() > 1 ? a[1].asString() : "";
@@ -16439,75 +16449,75 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 if (!voice.empty()) cmd += " -v \"" + voice + "\"";
                 cmd += " \"" + text + "\" &";
                 std::system(cmd.c_str());
-                return nova_null();
-            }, "Speak"));
+                return nova_null(); }, "Speak"));
 
             // ── Pasteboard (clipboard) ─────────────────────────────────────────
             auto pbObj = nova_obj();
-            pbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val {
+            pbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                             {
                 FILE *fp = popen("pbpaste", "r");
                 if (!fp) return nova_null();
                 std::string out; char buf[256];
                 while (fgets(buf, sizeof(buf), fp)) out += buf;
                 pclose(fp);
-                return nova_str(out);
-            }, "GetText"));
-            pbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                return nova_str(out); }, "GetText"));
+            pbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 if (a.empty()) return nova_bool(false);
                 std::string s = a[0].asString();
                 FILE *fp = popen("pbcopy", "w");
                 if (!fp) return nova_bool(false);
                 fwrite(s.c_str(), 1, s.size(), fp);
                 pclose(fp);
-                return nova_bool(true);
-            }, "SetText"));
+                return nova_bool(true); }, "SetText"));
             appleObj->obj->set("Pasteboard", pbObj);
 
             // ── sysctl wrappers ────────────────────────────────────────────────
-            appleObj->obj->set("GetCPUBrand", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("GetCPUBrand", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                    {
                 char buf[256] = {}; size_t sz = sizeof(buf);
                 sysctlbyname("machdep.cpu.brand_string", buf, &sz, nullptr, 0);
-                return nova_str(buf);
-            }, "GetCPUBrand"));
+                return nova_str(buf); }, "GetCPUBrand"));
 
-            appleObj->obj->set("GetPhysicalMemory", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("GetPhysicalMemory", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                          {
                 uint64_t mem = 0; size_t sz = sizeof(mem);
                 sysctlbyname("hw.memsize", &mem, &sz, nullptr, 0);
-                return nova_num((double)mem);
-            }, "GetPhysicalMemory"));
+                return nova_num((double)mem); }, "GetPhysicalMemory"));
 
-            appleObj->obj->set("GetCPUCount", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("GetCPUCount", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                    {
                 int n = 0; size_t sz = sizeof(n);
                 sysctlbyname("hw.logicalcpu", &n, &sz, nullptr, 0);
-                return nova_num((double)n);
-            }, "GetCPUCount"));
+                return nova_num((double)n); }, "GetCPUCount"));
 
-            appleObj->obj->set("GetOSVersion", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("GetOSVersion", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                     {
                 char buf[64] = {}; size_t sz = sizeof(buf);
                 sysctlbyname("kern.osrelease", buf, &sz, nullptr, 0);
-                return nova_str(buf);
-            }, "GetOSVersion"));
+                return nova_str(buf); }, "GetOSVersion"));
 
             // ── open URL / file with default app ──────────────────────────────
-            appleObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            appleObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 if (a.empty()) return nova_bool(false);
                 std::string cmd = "open \"" + a[0].asString() + "\" &";
-                return nova_bool(std::system(cmd.c_str()) == 0);
-            }, "Open"));
+                return nova_bool(std::system(cmd.c_str()) == 0); }, "Open"));
 
             // ── Dark mode check ────────────────────────────────────────────────
-            appleObj->obj->set("IsDarkMode", NovaValue::makeNative([](ValVec, auto) -> Val {
+            appleObj->obj->set("IsDarkMode", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 FILE *fp = popen("defaults read -g AppleInterfaceStyle 2>/dev/null", "r");
                 if (!fp) return nova_bool(false);
                 char buf[64] = {}; fgets(buf, sizeof(buf), fp); pclose(fp);
                 std::string s(buf);
                 std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-                return nova_bool(s.find("dark") != std::string::npos);
-            }, "IsDarkMode"));
+                return nova_bool(s.find("dark") != std::string::npos); }, "IsDarkMode"));
 
             // ── Keychain (simple password store via security CLI) ──────────────
             auto kcObj = nova_obj();
-            kcObj->obj->set("FindPassword", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            kcObj->obj->set("FindPassword", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 if (a.size() < 2) return nova_null();
                 std::string cmd = "security find-generic-password -a \"" + a[0].asString() +
                                   "\" -s \"" + a[1].asString() + "\" -w 2>/dev/null";
@@ -16516,29 +16526,25 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 char buf[512] = {}; fgets(buf, sizeof(buf), fp); pclose(fp);
                 std::string s(buf);
                 while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) s.pop_back();
-                return s.empty() ? nova_null() : nova_str(s);
-            }, "FindPassword"));
-            kcObj->obj->set("AddPassword", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                return s.empty() ? nova_null() : nova_str(s); }, "FindPassword"));
+            kcObj->obj->set("AddPassword", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                 if (a.size() < 3) return nova_bool(false);
                 std::string cmd = "security add-generic-password -a \"" + a[0].asString() +
                                   "\" -s \"" + a[1].asString() + "\" -w \"" + a[2].asString() + "\" 2>/dev/null";
-                return nova_bool(std::system(cmd.c_str()) == 0);
-            }, "AddPassword"));
+                return nova_bool(std::system(cmd.c_str()) == 0); }, "AddPassword"));
             appleObj->obj->set("Keychain", kcObj);
 
             // ── mach_absolute_time high-res timer ─────────────────────────────
-            appleObj->obj->set("MachTime", NovaValue::makeNative([](ValVec, auto) -> Val {
-                return nova_num((double)mach_absolute_time());
-            }, "MachTime"));
+            appleObj->obj->set("MachTime", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                 { return nova_num((double)mach_absolute_time()); }, "MachTime"));
 
             // ── process info ──────────────────────────────────────────────────
-            appleObj->obj->set("GetPID", NovaValue::makeNative([](ValVec, auto) -> Val {
-                return nova_num((double)getpid());
-            }, "GetPID"));
+            appleObj->obj->set("GetPID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_num((double)getpid()); }, "GetPID"));
 
-            appleObj->obj->set("GetParentPID", NovaValue::makeNative([](ValVec, auto) -> Val {
-                return nova_num((double)getppid());
-            }, "GetParentPID"));
+            appleObj->obj->set("GetParentPID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                     { return nova_num((double)getppid()); }, "GetParentPID"));
 
             std_obj->obj->set("Apple", appleObj);
         }
@@ -16555,42 +16561,49 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
 
             // ── Beep (ALSA sine wave) ──────────────────────────────────────────
             // Std.Linux.Beep(freq, ms)
-            linuxObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val {
-                int freq = a.size() > 0 ? (int)a[0].asNumber() : 750;
-                int ms   = a.size() > 1 ? (int)a[1].asNumber() : 300;
-                const int sampleRate = 44100;
-                int numSamples = sampleRate * ms / 1000;
-                if (numSamples <= 0) return nova_bool(false);
+            linuxObj->obj->set("Beep", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
+                                                                 int freq = a.size() > 0 ? (int)a[0].asNumber() : 750;
+                                                                 int ms = a.size() > 1 ? (int)a[1].asNumber() : 300;
+                                                                 const int sampleRate = 44100;
+                                                                 int numSamples = sampleRate * ms / 1000;
+                                                                 if (numSamples <= 0)
+                                                                     return nova_bool(false);
 
-                std::vector<int16_t> buf(numSamples);
-                int fade = sampleRate * 10 / 1000;
-                for (int i = 0; i < numSamples; i++) {
-                    float t   = (float)i / sampleRate;
-                    float env = 1.0f;
-                    if (i < fade)              env = (float)i / fade;
-                    else if (i > numSamples - fade) env = (float)(numSamples - i) / fade;
-                    buf[i] = (int16_t)(env * 0.5f * 32767 * sinf(2.0f * (float)M_PI * freq * t));
-                }
+                                                                 std::vector<int16_t> buf(numSamples);
+                                                                 int fade = sampleRate * 10 / 1000;
+                                                                 for (int i = 0; i < numSamples; i++)
+                                                                 {
+                                                                     float t = (float)i / sampleRate;
+                                                                     float env = 1.0f;
+                                                                     if (i < fade)
+                                                                         env = (float)i / fade;
+                                                                     else if (i > numSamples - fade)
+                                                                         env = (float)(numSamples - i) / fade;
+                                                                     buf[i] = (int16_t)(env * 0.5f * 32767 * sinf(2.0f * (float)M_PI * freq * t));
+                                                                 }
 
 #if __has_include(<alsa/asoundlib.h>)
-                snd_pcm_t *pcm = nullptr;
-                if (snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0)
-                    return nova_bool(false);
-                snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED,
-                                   1, sampleRate, 1, ms * 1000);
-                snd_pcm_writei(pcm, buf.data(), numSamples);
-                snd_pcm_drain(pcm);
-                snd_pcm_close(pcm);
-                return nova_bool(true);
+                                                                 snd_pcm_t *pcm = nullptr;
+                                                                 if (snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0)
+                                                                     return nova_bool(false);
+                                                                 snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED,
+                                                                                    1, sampleRate, 1, ms * 1000);
+                                                                 snd_pcm_writei(pcm, buf.data(), numSamples);
+                                                                 snd_pcm_drain(pcm);
+                                                                 snd_pcm_close(pcm);
+                                                                 return nova_bool(true);
 #else
-                // fallback: terminal bell
-                std::system("echo -e '\\a'");
-                return nova_bool(false);
+                                                                 // fallback: terminal bell
+                                                                 std::system("echo -e '\\a'");
+                                                                 return nova_bool(false);
 #endif
-            }, "Beep"));
+                                                             },
+                                                             "Beep"));
 
             // ── /proc/cpuinfo ─────────────────────────────────────────────────
-            linuxObj->obj->set("GetCPUInfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetCPUInfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 auto obj = nova_obj();
                 std::ifstream f("/proc/cpuinfo");
                 if (!f) return obj;
@@ -16605,11 +16618,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     // first occurrence wins
                     if (!obj->obj->get(key)) obj->obj->set(key, nova_str(val));
                 }
-                return obj;
-            }, "GetCPUInfo"));
+                return obj; }, "GetCPUInfo"));
 
             // ── /proc/meminfo ─────────────────────────────────────────────────
-            linuxObj->obj->set("GetMemInfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetMemInfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 auto obj = nova_obj();
                 std::ifstream f("/proc/meminfo");
                 if (!f) return obj;
@@ -16623,11 +16636,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     val = (s == std::string::npos) ? "" : val.substr(s);
                     obj->obj->set(key, nova_str(val));
                 }
-                return obj;
-            }, "GetMemInfo"));
+                return obj; }, "GetMemInfo"));
 
             // ── /proc/stat (CPU usage snapshot) ──────────────────────────────
-            linuxObj->obj->set("GetCPUStat", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetCPUStat", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 auto arr = nova_arr();
                 std::ifstream f("/proc/stat");
                 if (!f) return arr;
@@ -16649,22 +16662,22 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     entry->obj->set("steal",   nova_num(steal));
                     arr->arr->push(entry);
                 }
-                return arr;
-            }, "GetCPUStat"));
+                return arr; }, "GetCPUStat"));
 
             // ── /proc/loadavg ─────────────────────────────────────────────────
-            linuxObj->obj->set("GetLoadAvg", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetLoadAvg", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                   {
                 double load[3] = {};
                 getloadavg(load, 3);
                 auto obj = nova_obj();
                 obj->obj->set("1min",  nova_num(load[0]));
                 obj->obj->set("5min",  nova_num(load[1]));
                 obj->obj->set("15min", nova_num(load[2]));
-                return obj;
-            }, "GetLoadAvg"));
+                return obj; }, "GetLoadAvg"));
 
             // ── /proc/net/dev ─────────────────────────────────────────────────
-            linuxObj->obj->set("GetNetworkStats", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetNetworkStats", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                        {
                 auto obj = nova_obj();
                 std::ifstream f("/proc/net/dev");
                 if (!f) return obj;
@@ -16691,11 +16704,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     entry->obj->set("txErrors", nova_num((double)txErr));
                     obj->obj->set(iface, entry);
                 }
-                return obj;
-            }, "GetNetworkStats"));
+                return obj; }, "GetNetworkStats"));
 
             // ── /proc/self/status ─────────────────────────────────────────────
-            linuxObj->obj->set("GetSelfStatus", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetSelfStatus", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                      {
                 auto obj = nova_obj();
                 std::ifstream f("/proc/self/status");
                 if (!f) return obj;
@@ -16709,11 +16722,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                     val = (s == std::string::npos) ? "" : val.substr(s);
                     obj->obj->set(key, nova_str(val));
                 }
-                return obj;
-            }, "GetSelfStatus"));
+                return obj; }, "GetSelfStatus"));
 
             // ── inotify (file watch) ──────────────────────────────────────────
-            linuxObj->obj->set("WatchFile", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("WatchFile", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 if (a.empty()) return nova_null();
                 std::string path = a[0].asString();
                 int fd = inotify_init1(IN_NONBLOCK);
@@ -16751,19 +16764,19 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("IN_MOVED_FROM",  nova_num(IN_MOVED_FROM));
                 obj->obj->set("IN_MOVED_TO",    nova_num(IN_MOVED_TO));
                 obj->obj->set("IN_CLOSE_WRITE", nova_num(IN_CLOSE_WRITE));
-                return obj;
-            }, "WatchFile"));
+                return obj; }, "WatchFile"));
 
             // inotify constants at top level too
-            linuxObj->obj->set("IN_MODIFY",      nova_num(IN_MODIFY));
-            linuxObj->obj->set("IN_CREATE",      nova_num(IN_CREATE));
-            linuxObj->obj->set("IN_DELETE",      nova_num(IN_DELETE));
-            linuxObj->obj->set("IN_MOVED_FROM",  nova_num(IN_MOVED_FROM));
-            linuxObj->obj->set("IN_MOVED_TO",    nova_num(IN_MOVED_TO));
+            linuxObj->obj->set("IN_MODIFY", nova_num(IN_MODIFY));
+            linuxObj->obj->set("IN_CREATE", nova_num(IN_CREATE));
+            linuxObj->obj->set("IN_DELETE", nova_num(IN_DELETE));
+            linuxObj->obj->set("IN_MOVED_FROM", nova_num(IN_MOVED_FROM));
+            linuxObj->obj->set("IN_MOVED_TO", nova_num(IN_MOVED_TO));
             linuxObj->obj->set("IN_CLOSE_WRITE", nova_num(IN_CLOSE_WRITE));
 
             // ── epoll ─────────────────────────────────────────────────────────
-            linuxObj->obj->set("EpollCreate", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("EpollCreate", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                    {
                 int fd = epoll_create1(0);
                 if (fd < 0) return nova_null();
                 auto obj = nova_obj();
@@ -16799,28 +16812,28 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("close", NovaValue::makeNative([fdShared](ValVec, auto) -> Val {
                     close(*fdShared); return nova_null();
                 }, "close"));
-                return obj;
-            }, "EpollCreate"));
+                return obj; }, "EpollCreate"));
 
-            linuxObj->obj->set("EPOLLIN",  nova_num(EPOLLIN));
+            linuxObj->obj->set("EPOLLIN", nova_num(EPOLLIN));
             linuxObj->obj->set("EPOLLOUT", nova_num(EPOLLOUT));
             linuxObj->obj->set("EPOLLERR", nova_num(EPOLLERR));
             linuxObj->obj->set("EPOLLHUP", nova_num(EPOLLHUP));
-            linuxObj->obj->set("EPOLLET",  nova_num(EPOLLET));
+            linuxObj->obj->set("EPOLLET", nova_num(EPOLLET));
 
             // ── sendfile ──────────────────────────────────────────────────────
-            linuxObj->obj->set("Sendfile", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Sendfile", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                 {
                 if (a.size() < 3) return nova_num(-1);
                 int outFd  = (int)a[0].asNumber();
                 int inFd   = (int)a[1].asNumber();
                 size_t cnt = (size_t)a[2].asNumber();
                 off_t offset = a.size() > 3 ? (off_t)a[3].asNumber() : 0;
                 ssize_t r = sendfile(outFd, inFd, &offset, cnt);
-                return nova_num((double)r);
-            }, "Sendfile"));
+                return nova_num((double)r); }, "Sendfile"));
 
             // ── mmap ──────────────────────────────────────────────────────────
-            linuxObj->obj->set("Mmap", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Mmap", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 size_t length = a.size() > 0 ? (size_t)a[0].asNumber() : 4096;
                 int prot      = a.size() > 1 ? (int)a[1].asNumber() : PROT_READ | PROT_WRITE;
                 int flags     = a.size() > 2 ? (int)a[2].asNumber() : MAP_PRIVATE | MAP_ANONYMOUS;
@@ -16833,84 +16846,90 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 ptr->rawAddr = p; ptr->rawSize = length;
                 std::ostringstream ss; ss << "0x" << std::hex << (uintptr_t)p; ptr->address = ss.str();
                 auto out = std::make_shared<NovaValue>(); out->kind = VK::Pointer; out->ptr = ptr;
-                return out;
-            }, "Mmap"));
+                return out; }, "Mmap"));
 
-            linuxObj->obj->set("Munmap", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Munmap", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                 if (a.empty() || !a[0].isPointer() || !a[0]->ptr || !a[0]->ptr->isRaw) return nova_bool(false);
                 size_t len = a.size() > 1 ? (size_t)a[1].asNumber() : a[0]->ptr->rawSize;
-                return nova_bool(munmap(a[0]->ptr->rawAddr, len) == 0);
-            }, "Munmap"));
+                return nova_bool(munmap(a[0]->ptr->rawAddr, len) == 0); }, "Munmap"));
 
-            linuxObj->obj->set("PROT_READ",      nova_num(PROT_READ));
-            linuxObj->obj->set("PROT_WRITE",     nova_num(PROT_WRITE));
-            linuxObj->obj->set("PROT_EXEC",      nova_num(PROT_EXEC));
-            linuxObj->obj->set("MAP_PRIVATE",    nova_num(MAP_PRIVATE));
-            linuxObj->obj->set("MAP_SHARED",     nova_num(MAP_SHARED));
-            linuxObj->obj->set("MAP_ANONYMOUS",  nova_num(MAP_ANONYMOUS));
+            linuxObj->obj->set("PROT_READ", nova_num(PROT_READ));
+            linuxObj->obj->set("PROT_WRITE", nova_num(PROT_WRITE));
+            linuxObj->obj->set("PROT_EXEC", nova_num(PROT_EXEC));
+            linuxObj->obj->set("MAP_PRIVATE", nova_num(MAP_PRIVATE));
+            linuxObj->obj->set("MAP_SHARED", nova_num(MAP_SHARED));
+            linuxObj->obj->set("MAP_ANONYMOUS", nova_num(MAP_ANONYMOUS));
 
             // ── prctl (process control) ────────────────────────────────────────
-            linuxObj->obj->set("Prctl", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Prctl", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                              {
                 if (a.empty()) return nova_num(-1);
                 int op  = (int)a[0].asNumber();
                 long a1 = a.size() > 1 ? (long)a[1].asNumber() : 0;
                 long a2 = a.size() > 2 ? (long)a[2].asNumber() : 0;
                 long a3 = a.size() > 3 ? (long)a[3].asNumber() : 0;
                 long a4 = a.size() > 4 ? (long)a[4].asNumber() : 0;
-                return nova_num((double)prctl(op, a1, a2, a3, a4));
-            }, "Prctl"));
+                return nova_num((double)prctl(op, a1, a2, a3, a4)); }, "Prctl"));
 
-            linuxObj->obj->set("PR_SET_NAME",   nova_num(PR_SET_NAME));
-            linuxObj->obj->set("PR_GET_NAME",   nova_num(PR_GET_NAME));
-            linuxObj->obj->set("PR_SET_DUMPABLE",nova_num(PR_SET_DUMPABLE));
+            linuxObj->obj->set("PR_SET_NAME", nova_num(PR_SET_NAME));
+            linuxObj->obj->set("PR_GET_NAME", nova_num(PR_GET_NAME));
+            linuxObj->obj->set("PR_SET_DUMPABLE", nova_num(PR_SET_DUMPABLE));
 
             // ── setrlimit / getrlimit ─────────────────────────────────────────
-            linuxObj->obj->set("Getrlimit", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Getrlimit", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 if (a.empty()) return nova_null();
                 struct rlimit rl;
                 if (getrlimit((int)a[0].asNumber(), &rl) != 0) return nova_null();
                 auto obj = nova_obj();
                 obj->obj->set("cur", nova_num((double)rl.rlim_cur));
                 obj->obj->set("max", nova_num((double)rl.rlim_max));
-                return obj;
-            }, "Getrlimit"));
+                return obj; }, "Getrlimit"));
 
-            linuxObj->obj->set("Setrlimit", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Setrlimit", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                  {
                 if (a.size() < 3) return nova_bool(false);
                 struct rlimit rl;
                 rl.rlim_cur = (rlim_t)a[1].asNumber();
                 rl.rlim_max = (rlim_t)a[2].asNumber();
-                return nova_bool(setrlimit((int)a[0].asNumber(), &rl) == 0);
-            }, "Setrlimit"));
+                return nova_bool(setrlimit((int)a[0].asNumber(), &rl) == 0); }, "Setrlimit"));
 
-            linuxObj->obj->set("RLIMIT_NOFILE",  nova_num(RLIMIT_NOFILE));
-            linuxObj->obj->set("RLIMIT_NPROC",   nova_num(RLIMIT_NPROC));
-            linuxObj->obj->set("RLIMIT_STACK",   nova_num(RLIMIT_STACK));
-            linuxObj->obj->set("RLIMIT_AS",      nova_num(RLIMIT_AS));
-            linuxObj->obj->set("RLIM_INFINITY",  nova_num((double)RLIM_INFINITY));
+            linuxObj->obj->set("RLIMIT_NOFILE", nova_num(RLIMIT_NOFILE));
+            linuxObj->obj->set("RLIMIT_NPROC", nova_num(RLIMIT_NPROC));
+            linuxObj->obj->set("RLIMIT_STACK", nova_num(RLIMIT_STACK));
+            linuxObj->obj->set("RLIMIT_AS", nova_num(RLIMIT_AS));
+            linuxObj->obj->set("RLIM_INFINITY", nova_num((double)RLIM_INFINITY));
 
             // ── getpid / getppid / getuid / getgid ────────────────────────────
-            linuxObj->obj->set("GetPID",  NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)getpid()); }, "GetPID"));
-            linuxObj->obj->set("GetPPID", NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)getppid()); }, "GetPPID"));
-            linuxObj->obj->set("GetUID",  NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)getuid()); }, "GetUID"));
-            linuxObj->obj->set("GetGID",  NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)getgid()); }, "GetGID"));
-            linuxObj->obj->set("GetEUID", NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)geteuid()); }, "GetEUID"));
-            linuxObj->obj->set("GetEGID", NovaValue::makeNative([](ValVec, auto) -> Val { return nova_num((double)getegid()); }, "GetEGID"));
+            linuxObj->obj->set("GetPID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_num((double)getpid()); }, "GetPID"));
+            linuxObj->obj->set("GetPPID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                { return nova_num((double)getppid()); }, "GetPPID"));
+            linuxObj->obj->set("GetUID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_num((double)getuid()); }, "GetUID"));
+            linuxObj->obj->set("GetGID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                               { return nova_num((double)getgid()); }, "GetGID"));
+            linuxObj->obj->set("GetEUID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                { return nova_num((double)geteuid()); }, "GetEUID"));
+            linuxObj->obj->set("GetEGID", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                { return nova_num((double)getegid()); }, "GetEGID"));
 
             // ── hostname ──────────────────────────────────────────────────────
-            linuxObj->obj->set("GetHostname", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetHostname", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                    {
                 char buf[256] = {}; gethostname(buf, sizeof(buf));
-                return nova_str(buf);
-            }, "GetHostname"));
+                return nova_str(buf); }, "GetHostname"));
 
-            linuxObj->obj->set("SetHostname", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("SetHostname", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                    {
                 if (a.empty()) return nova_bool(false);
                 std::string s = a[0].asString();
-                return nova_bool(sethostname(s.c_str(), s.size()) == 0);
-            }, "SetHostname"));
+                return nova_bool(sethostname(s.c_str(), s.size()) == 0); }, "SetHostname"));
 
             // ── sysinfo ───────────────────────────────────────────────────────
-            linuxObj->obj->set("Sysinfo", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("Sysinfo", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                {
                 struct sysinfo si; sysinfo(&si);
                 auto obj = nova_obj();
                 obj->obj->set("uptime",    nova_num((double)si.uptime));
@@ -16922,11 +16941,11 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("freeswap",  nova_num((double)si.freeswap));
                 obj->obj->set("procs",     nova_num((double)si.procs));
                 obj->obj->set("mem_unit",  nova_num((double)si.mem_unit));
-                return obj;
-            }, "Sysinfo"));
+                return obj; }, "Sysinfo"));
 
             // ── uname ─────────────────────────────────────────────────────────
-            linuxObj->obj->set("Uname", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("Uname", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                              {
                 struct utsname u; uname(&u);
                 auto obj = nova_obj();
                 obj->obj->set("sysname",  nova_str(u.sysname));
@@ -16934,83 +16953,82 @@ obj->obj->set("MemoryEntries", NovaValue::makeNative([pid](ValVec, auto) -> Val 
                 obj->obj->set("release",  nova_str(u.release));
                 obj->obj->set("version",  nova_str(u.version));
                 obj->obj->set("machine",  nova_str(u.machine));
-                return obj;
-            }, "Uname"));
+                return obj; }, "Uname"));
 
             // ── /proc/uptime ──────────────────────────────────────────────────
-            linuxObj->obj->set("GetUptime", NovaValue::makeNative([](ValVec, auto) -> Val {
+            linuxObj->obj->set("GetUptime", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                                  {
                 std::ifstream f("/proc/uptime");
                 if (!f) return nova_null();
                 double up, idle; f >> up >> idle;
                 auto obj = nova_obj();
                 obj->obj->set("uptime", nova_num(up));
                 obj->obj->set("idle",   nova_num(idle));
-                return obj;
-            }, "GetUptime"));
+                return obj; }, "GetUptime"));
 
             // ── clipboard (xclip/xsel/wl-clipboard) ───────────────────────────
             auto cbObj = nova_obj();
-            cbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val {
+            cbObj->obj->set("GetText", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                             {
                 // Try wayland first, then X11
                 FILE *fp = popen("wl-paste 2>/dev/null || xclip -selection clipboard -o 2>/dev/null || xsel --clipboard --output 2>/dev/null", "r");
                 if (!fp) return nova_null();
                 std::string out; char buf[256];
                 while (fgets(buf, sizeof(buf), fp)) out += buf;
                 pclose(fp);
-                return nova_str(out);
-            }, "GetText"));
-            cbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val {
+                return nova_str(out); }, "GetText"));
+            cbObj->obj->set("SetText", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 if (a.empty()) return nova_bool(false);
                 std::string s = a[0].asString();
                 // try wl-copy, then xclip, then xsel
                 std::string cmd = "echo -n '" + s + "' | wl-copy 2>/dev/null || echo -n '" + s + "' | xclip -selection clipboard 2>/dev/null || echo -n '" + s + "' | xsel --clipboard --input 2>/dev/null";
-                return nova_bool(std::system(cmd.c_str()) == 0);
-            }, "SetText"));
+                return nova_bool(std::system(cmd.c_str()) == 0); }, "SetText"));
             linuxObj->obj->set("Clipboard", cbObj);
 
             // ── notify-send (desktop notification) ────────────────────────────
-            linuxObj->obj->set("Notify", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Notify", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                               {
                 std::string title   = a.size() > 0 ? a[0].asString() : "Nova";
                 std::string message = a.size() > 1 ? a[1].asString() : "";
                 std::string urgency = a.size() > 2 ? a[2].asString() : "normal";
                 std::string cmd = "notify-send -u " + urgency + " \"" + title + "\" \"" + message + "\" 2>/dev/null &";
                 std::system(cmd.c_str());
-                return nova_null();
-            }, "Notify"));
+                return nova_null(); }, "Notify"));
 
             // ── espeak / festival TTS ──────────────────────────────────────────
-            linuxObj->obj->set("Speak", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Speak", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                              {
                 if (a.empty()) return nova_null();
                 std::string text = a[0].asString();
                 std::string cmd = "espeak \"" + text + "\" 2>/dev/null || festival --tts <<< \"" + text + "\" 2>/dev/null &";
                 std::system(cmd.c_str());
-                return nova_null();
-            }, "Speak"));
+                return nova_null(); }, "Speak"));
 
             // ── open URL/file with xdg-open ───────────────────────────────────
-            linuxObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("Open", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                             {
                 if (a.empty()) return nova_bool(false);
                 std::string cmd = "xdg-open \"" + a[0].asString() + "\" 2>/dev/null &";
-                return nova_bool(std::system(cmd.c_str()) == 0);
-            }, "Open"));
+                return nova_bool(std::system(cmd.c_str()) == 0); }, "Open"));
 
             // ── raw socket helpers ────────────────────────────────────────────
-            linuxObj->obj->set("CreateRawSocket", NovaValue::makeNative([](ValVec a, auto) -> Val {
+            linuxObj->obj->set("CreateRawSocket", NovaValue::makeNative([](ValVec a, auto) -> Val
+                                                                        {
                 int domain   = a.size() > 0 ? (int)a[0].asNumber() : AF_INET;
                 int type     = a.size() > 1 ? (int)a[1].asNumber() : SOCK_RAW;
                 int protocol = a.size() > 2 ? (int)a[2].asNumber() : IPPROTO_RAW;
                 int fd = socket(domain, type, protocol);
-                return fd < 0 ? nova_num(-1) : nova_num((double)fd);
-            }, "CreateRawSocket"));
+                return fd < 0 ? nova_num(-1) : nova_num((double)fd); }, "CreateRawSocket"));
 
-            linuxObj->obj->set("AF_INET",   nova_num(AF_INET));
-            linuxObj->obj->set("AF_INET6",  nova_num(AF_INET6));
+            linuxObj->obj->set("AF_INET", nova_num(AF_INET));
+            linuxObj->obj->set("AF_INET6", nova_num(AF_INET6));
             linuxObj->obj->set("AF_PACKET", nova_num(AF_PACKET));
-            linuxObj->obj->set("SOCK_RAW",  nova_num(SOCK_RAW));
+            linuxObj->obj->set("SOCK_RAW", nova_num(SOCK_RAW));
             linuxObj->obj->set("IPPROTO_RAW", nova_num(IPPROTO_RAW));
             linuxObj->obj->set("IPPROTO_TCP", nova_num(IPPROTO_TCP));
             linuxObj->obj->set("IPPROTO_UDP", nova_num(IPPROTO_UDP));
-            linuxObj->obj->set("IPPROTO_ICMP",nova_num(IPPROTO_ICMP));
+            linuxObj->obj->set("IPPROTO_ICMP", nova_num(IPPROTO_ICMP));
 
             std_obj->obj->set("Linux", linuxObj);
         }
