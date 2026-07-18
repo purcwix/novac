@@ -2623,6 +2623,7 @@ namespace novac
         Val subject = n->subject ? evaluate(n->subject.get(), s) : nova_null();
         Val last = nova_null();
         bool matched = false;
+        s->setOwn("SwitchValue", subject);
 
         for (auto &c : n->cases)
         {
