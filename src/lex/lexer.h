@@ -48,6 +48,8 @@ namespace novac
 
         std::vector<Token> _tokens;
         std::unordered_map<std::string, std::string> _definitions;
+        std::unordered_map<std::string, size_t> _labels;     // $label name → _pos after label line
+        std::unordered_map<std::string, int> _labelLines;    // $label name → _line after label line
 
         // ── character helpers ────────────────────────────────────────────────
         char peek(int offset = 0) const;
@@ -76,6 +78,7 @@ namespace novac
 
         // ── preprocessor ────────────────────────────────────────────────────
         void handleDirective();
+        void scanLabels();
         std::string readBareIdent();
         std::string readRestOfLine();
         void skipLine();

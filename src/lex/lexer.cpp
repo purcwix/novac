@@ -320,6 +320,7 @@ namespace novac
 
     std::vector<Token> Lexer::tokenize()
     {
+        scanLabels();
         while (!atEnd())
         {
             char c = peek();
@@ -503,6 +504,56 @@ namespace novac
         _col = 1;
     }
 
+    void Lexer::scanLabels()
+    {
+        // Pre-scan the full source for $label directives so forward jumps work.
+        // Records _pos and _line of the position immediately after each label line.
+        size_t p = 0;
+        int line = 1;
+
+        while (p < _source.size())
+        {
+            // skip to next $
+            if (_source[p] != '$') {
+                if (_source[p] == '\n') line++;
+                p++;
+                continue;
+            }
+            p++; // consume $
+
+            // skip whitespace
+            while (p < _source.size() && (_source[p] == ' ' || _source[p] == '\t')) p++;
+
+            // read directive name
+            size_t start = p;
+            while (p < _source.size() && (std::isalnum((unsigned char)_source[p]) || _source[p] == '_')) p++;
+            std::string dir = _source.substr(start, p - start);
+
+            if (dir != "label") {
+                // skip rest of line
+                while (p < _source.size() && _source[p] != '\n') p++;
+                continue;
+            }
+
+            // skip whitespace
+            while (p < _source.size() && (_source[p] == ' ' || _source[p] == '\t')) p++;
+
+            // read label name
+            size_t nstart = p;
+            while (p < _source.size() && (std::isalnum((unsigned char)_source[p]) || _source[p] == '_')) p++;
+            std::string name = _source.substr(nstart, p - nstart);
+
+            // skip to end of line
+            while (p < _source.size() && _source[p] != '\n') p++;
+            if (p < _source.size()) { p++; line++; } // consume \n
+
+            if (!name.empty()) {
+                _labels[name]     = p;
+                _labelLines[name] = line;
+            }
+        }
+    }
+
     void Lexer::handleDirective()
     {
         // skip leading whitespace on same line
@@ -643,6 +694,47 @@ namespace novac
             if (dirArg == "log") std::cout << readRestOfLine() << std::endl;
             if (dirArg == "error") std::cerr << readRestOfLine() << std::endl;
             if (dirArg == "ask") { std::cout << readRestOfLine(); std::string in; std::getline(std::cin, in); addToken(TT::STRING, in, _col); }
+        }
+        else if (dirName == "label")
+        {
+            // $label Name — already registered by scanLabels(), just consume the line
+            // dirArg already consumed the name; nothing to emit
+        }
+        else if (dirName == "jump")
+        {
+            // $jump Name [ifdef|ifndef Macro]
+            // dirArg = label name; rest of line = optional condition
+            std::string rest = readRestOfLine();
+            shouldSkipLine = false;
+
+            bool doJump = true;
+            if (!rest.empty())
+            {
+                size_t sp = rest.find(' ');
+                std::string cond = (sp != std::string::npos) ? rest.substr(0, sp) : rest;
+                std::string macro;
+                if (sp != std::string::npos)
+                {
+                    macro = rest.substr(sp + 1);
+                    size_t l = macro.find_first_not_of(" \t");
+                    size_t r = macro.find_last_not_of(" \t");
+                    macro = (l == std::string::npos) ? "" : macro.substr(l, r - l + 1);
+                }
+                if (cond == "ifdef")
+                    doJump = (_definitions.count(macro) > 0);
+                else if (cond == "ifndef")
+                    doJump = (_definitions.count(macro) == 0);
+            }
+
+            if (doJump)
+            {
+                auto it = _labels.find(dirArg);
+                if (it == _labels.end())
+                    error("$jump: undefined label '" + dirArg + "'");
+                _pos  = it->second;
+                _line = _labelLines.at(dirArg);
+                _col  = 1;
+            }
         }
         else
         {
