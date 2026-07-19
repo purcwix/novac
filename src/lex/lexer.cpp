@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 namespace novac
 {
@@ -636,6 +637,12 @@ namespace novac
         else if (dirName == "endif")
         {
             _skip = false;
+        }
+        else if (dirName == "io")
+        {
+            if (dirArg == "log") std::cout << readRestOfLine() << std::endl;
+            if (dirArg == "error") std::cerr << readRestOfLine() << std::endl;
+            if (dirArg == "ask") { std::cout << readRestOfLine(); std::string in; std::getline(std::cin, in); addToken(TT::STRING, in, _col); }
         }
         else
         {
