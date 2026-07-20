@@ -22,6 +22,7 @@
 #else
 #include <termios.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #endif
 #if defined(__APPLE__)
 #include <AudioToolbox/AudioToolbox.h>
@@ -17036,6 +17037,35 @@ HRSRC h = FindResourceA(mod, name.c_str(), resType);
 #else
         std_obj->obj->set("Linux", nova_null());
 #endif // __linux__
+
+        // ── terminal size (cross-platform) ──────────────────────────────────────
+        std_obj->obj->set("TermCols", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                             {
+#ifdef _WIN32
+            CONSOLE_SCREEN_BUFFER_INFO info;
+            HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (!GetConsoleScreenBufferInfo(h, &info)) return nova_num(80);
+            return nova_num(info.srWindow.Right - info.srWindow.Left + 1);
+#else
+            struct winsize w;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != 0) return nova_num(80);
+            return nova_num(w.ws_col);
+#endif
+        }, "TermCols"));
+
+        std_obj->obj->set("TermRows", NovaValue::makeNative([](ValVec, auto) -> Val
+                                                             {
+#ifdef _WIN32
+            CONSOLE_SCREEN_BUFFER_INFO info;
+            HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (!GetConsoleScreenBufferInfo(h, &info)) return nova_num(24);
+            return nova_num(info.srWindow.Bottom - info.srWindow.Top + 1);
+#else
+            struct winsize w;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != 0) return nova_num(24);
+            return nova_num(w.ws_row);
+#endif
+        }, "TermRows"));
 
         // ── expose Std on global scope ────────────────────────────────────────────
         s->setOwn("Std", std_obj);
