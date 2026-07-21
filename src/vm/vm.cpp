@@ -7505,7 +7505,10 @@ namespace novac
         std_obj->obj->set("print", fn_print);
         std_obj->obj->set("println", fn_println);
 
-        // Std.GetFuncInfo(fn) -> object:
+        // ── Std.Functions namespace ───────────────────────────────────────────────
+        auto functions_obj = nova_obj();
+
+        // Std.Functions.GetFuncInfo(fn) -> object:
         // returns all function info (supports nova defined functions only, for now)
         // object is:
         // {
@@ -7513,7 +7516,7 @@ namespace novac
         // args,
         // meta: {...}
         // }
-        std_obj->obj->set("GetFuncInfo", NovaValue::makeNative([this, s](ValVec a, auto) -> Val
+        functions_obj->obj->set("GetFuncInfo", NovaValue::makeNative([this, s](ValVec a, auto) -> Val
                                                                {
                                                                    auto fn = a[0];
                                                                    
@@ -7550,7 +7553,7 @@ namespace novac
                                                                    return fnObj; },
                                                                "GetFuncInfo"));
 
-        std_obj->obj->set("GetFuncSyntax", NovaValue::makeNative([this](ValVec a, auto) -> Val
+        functions_obj->obj->set("GetFuncSyntax", NovaValue::makeNative([this](ValVec a, auto) -> Val
                                                                  {
                                                                      auto fn = a[0];
                                                                      std::string fnArgs = fn->fn->name + "(";
@@ -7564,6 +7567,44 @@ namespace novac
                                                                      };
                                                                      return nova_str(fnArgs + ")"); },
                                                                  "GetFuncSyntax"));
+
+        // Std.Functions.Delegate(gen) -> value
+        // Equivalent of `yield*`: must be called from inside a running generator
+        // body. Drives `gen` (a Nova generator object exposing next/return/throw)
+        // to completion, re-yielding each of its produced values out through the
+        // calling generator's own `yield`, and forwarding whatever the caller
+        // sends back in (via .next(val)) into the delegated generator. Returns
+        // the delegated generator's final return value once it's done.
+        functions_obj->obj->set("Delegate", NovaValue::makeNative([this](ValVec a, std::shared_ptr<Scope> s) -> Val
+                                                                 {
+            if (a.empty() || !a[0] || a[0]->kind != VK::Object)
+                return nova_null();
+            Val gen = a[0];
+
+            // `yield` is injected by the enclosing generator's fiber into the
+            // scope chain the delegate call runs in — look it up there.
+            Val yieldFn = s ? s->get("yield") : nullptr;
+            if (!yieldFn || !yieldFn.isFunction())
+                _error("Std.Functions.Delegate() called outside a generator");
+
+            Val nextFn = gen->obj->get("next");
+            if (!nextFn || !nextFn.isFunction())
+                _error("Std.Functions.Delegate() expects a generator object");
+
+            Val sent = nova_null();
+            while (true)
+            {
+                Val result = callFunction(nextFn, {sent}, s);
+                Val doneV  = result->obj->get("done");
+                Val value  = result->obj->get("value");
+                bool done  = doneV && doneV->asBool();
+                if (done)
+                    return value ? value : nova_null();
+                sent = callFunction(yieldFn, {value ? value : nova_null()}, s);
+            } },
+                                                                 "Delegate"));
+
+        std_obj->obj->set("Functions", functions_obj);
 
         // Std.Satisfies(value, interfaceName) -> bool
         std_obj->obj->set("Satisfies", NovaValue::makeNative([this](ValVec a, auto) -> Val
